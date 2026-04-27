@@ -563,11 +563,10 @@ Para copiar y pegar directamente como inline policy del Permission Set:
       "Resource": "arn:aws:logs:*:*:log-group:/aws/lambda/ftgo-*"
     },
     {
-      "Sid": "S3ArtifactsAndFrontend",
+      "Sid": "S3ArtifactsBucket",
       "Effect": "Allow",
       "Action": [
         "s3:CreateBucket",
-        "s3:DeleteBucket",
         "s3:PutObject",
         "s3:GetObject",
         "s3:DeleteObject",
@@ -588,8 +587,6 @@ Para copiar y pegar directamente como inline policy del Permission Set:
         "s3:ListAllMyBuckets"
       ],
       "Resource": [
-        "arn:aws:s3:::ftgo-frontend-*",
-        "arn:aws:s3:::ftgo-frontend-*/*",
         "arn:aws:s3:::aws-sam-cli-managed-default-*",
         "arn:aws:s3:::aws-sam-cli-managed-default-*/*"
       ]
@@ -598,28 +595,6 @@ Para copiar y pegar directamente como inline policy del Permission Set:
       "Sid": "S3ListAll",
       "Effect": "Allow",
       "Action": "s3:ListAllMyBuckets",
-      "Resource": "*"
-    },
-    {
-      "Sid": "CloudFrontManagement",
-      "Effect": "Allow",
-      "Action": [
-        "cloudfront:CreateDistribution",
-        "cloudfront:UpdateDistribution",
-        "cloudfront:DeleteDistribution",
-        "cloudfront:GetDistribution",
-        "cloudfront:GetDistributionConfig",
-        "cloudfront:ListDistributions",
-        "cloudfront:CreateInvalidation",
-        "cloudfront:GetInvalidation",
-        "cloudfront:TagResource",
-        "cloudfront:UntagResource",
-        "cloudfront:CreateOriginAccessControl",
-        "cloudfront:GetOriginAccessControl",
-        "cloudfront:UpdateOriginAccessControl",
-        "cloudfront:DeleteOriginAccessControl",
-        "cloudfront:ListOriginAccessControls"
-      ],
       "Resource": "*"
     },
     {
@@ -737,8 +712,8 @@ Para copiar y pegar directamente como inline policy del Permission Set:
    La política restringe permisos solo a recursos con ese prefijo, evitando que
    los alumnos afecten otros recursos de la cuenta.
 
-3. **CloudFront y API Gateway**: Estos servicios no soportan restricción por ARN
-   en todas sus acciones, por eso usan `Resource: "*"`. El prefijo `ftgo-` en los
+3. **API Gateway**: Este servicio no soporta restricción por ARN
+   en todas sus acciones, por eso usa `Resource: "*"`. El prefijo `ftgo-` en los
    nombres de los recursos proporciona aislamiento lógico.
 
 4. **Duración de sesión**: Se recomienda configurar 4 horas en el Permission Set
