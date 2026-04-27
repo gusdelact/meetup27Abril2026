@@ -4,14 +4,53 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FTGO - Microservicios Serverless</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; color: #333; line-height: 1.6; }
+header { background: linear-gradient(135deg, #1a237e, #4a148c); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+header span { background: #00c853; padding: 0.3rem 0.8rem; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+nav { background: #263238; padding: 0.5rem 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+nav button { background: transparent; color: #b0bec5; border: 1px solid #455a64; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
+nav button:hover { background: #37474f; color: white; }
+nav button.activo { background: #00c853; color: white; border-color: #00c853; }
+main { padding: 1.5rem; max-width: 1200px; margin: 0 auto; }
+.seccion { display: none; }
+.seccion.visible { display: block; }
+.api-badge { background: #e3f2fd; border: 1px solid #90caf9; border-radius: 4px; padding: 0.4rem 0.8rem; font-size: 0.8rem; color: #1565c0; margin-bottom: 1rem; display: inline-block; }
+h2 { margin-bottom: 0.5rem; color: #1a237e; }
+form { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 1.5rem; }
+label { display: block; margin-top: 0.8rem; font-weight: 600; font-size: 0.9rem; }
+input, textarea, select { width: 100%; padding: 0.5rem; margin-top: 0.3rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; }
+textarea { height: 60px; resize: vertical; }
+form button[type="submit"] { margin-top: 1rem; background: #1a237e; color: white; border: none; padding: 0.7rem 1.5rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
+form button[type="submit"]:hover { background: #283593; }
+table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+th { background: #263238; color: white; padding: 0.7rem; text-align: left; font-size: 0.85rem; }
+td { padding: 0.6rem 0.7rem; border-bottom: 1px solid #eee; font-size: 0.85rem; }
+tr:hover { background: #f5f5f5; }
+.btn { padding: 0.3rem 0.7rem; border: none; border-radius: 3px; cursor: pointer; font-size: 0.8rem; margin: 0.1rem; }
+.btn-peligro { background: #ef5350; color: white; }
+.btn-exito { background: #66bb6a; color: white; }
+.estado { padding: 0.2rem 0.5rem; border-radius: 3px; font-size: 0.75rem; font-weight: bold; }
+.estado-CREADO { background: #fff9c4; color: #f57f17; }
+.estado-ACEPTADO { background: #e3f2fd; color: #1565c0; }
+.estado-PREPARANDO { background: #fff3e0; color: #e65100; }
+.estado-LISTO { background: #e8f5e9; color: #2e7d32; }
+.estado-EN_CAMINO { background: #e1f5fe; color: #0277bd; }
+.estado-ENTREGADO { background: #c8e6c9; color: #1b5e20; }
+.estado-CANCELADO { background: #ffebee; color: #c62828; }
+.mensaje { padding: 0.7rem; border-radius: 4px; margin-bottom: 1rem; }
+.mensaje-exito { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+.mensaje-error { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+.elementos-pedido { background: #fafafa; padding: 1rem; border-radius: 4px; border: 1px solid #eee; margin-top: 0.5rem; }
+.elemento-linea { display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0; }
+    </style>
 </head>
 <body>
     <header>
         <h1>🍔 FTGO - Food To Go Online</h1>
         <span>MICROSERVICIOS v2.0 (Serverless)</span>
     </header>
-
     <nav>
         <button class="activo" onclick="mostrarSeccion('consumidores')">👤 Consumidores</button>
         <button onclick="mostrarSeccion('restaurantes')">🏪 Restaurantes</button>
@@ -20,162 +59,272 @@
         <button onclick="mostrarSeccion('pedidos')">📦 Pedidos</button>
         <button onclick="mostrarSeccion('pagos')">💳 Pagos</button>
     </nav>
-
     <main>
-        <!-- ============ SECCIÓN CONSUMIDORES ============ -->
+        <!-- CONSUMIDORES -->
         <div id="sec-consumidores" class="seccion visible">
             <h2>👤 Gestión de Consumidores</h2>
             <p class="api-badge">🔗 Microservicio: Consumidores API</p>
             <div id="msg-consumidores"></div>
             <form id="form-consumidor" onsubmit="crearConsumidor(event)">
-                <label>Nombre:</label>
-                <input type="text" id="cons-nombre" required>
-                <label>Email:</label>
-                <input type="email" id="cons-email" required>
-                <label>Teléfono:</label>
-                <input type="text" id="cons-telefono" required>
-                <label>Dirección:</label>
-                <textarea id="cons-direccion" required></textarea>
+                <label>Nombre:</label><input type="text" id="cons-nombre" required>
+                <label>Email:</label><input type="email" id="cons-email" required>
+                <label>Teléfono:</label><input type="text" id="cons-telefono" required>
+                <label>Dirección:</label><textarea id="cons-direccion" required></textarea>
                 <button type="submit">Registrar Consumidor</button>
             </form>
-            <table>
-                <thead>
-                    <tr><th>ID</th><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Acciones</th></tr>
-                </thead>
-                <tbody id="tabla-consumidores"></tbody>
-            </table>
+            <table><thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Acciones</th></tr></thead>
+            <tbody id="tabla-consumidores"></tbody></table>
         </div>
-
-        <!-- ============ SECCIÓN RESTAURANTES ============ -->
+        <!-- RESTAURANTES -->
         <div id="sec-restaurantes" class="seccion">
             <h2>🏪 Gestión de Restaurantes</h2>
             <p class="api-badge">🔗 Microservicio: Restaurantes API</p>
             <div id="msg-restaurantes"></div>
             <form id="form-restaurante" onsubmit="crearRestaurante(event)">
-                <label>Nombre:</label>
-                <input type="text" id="rest-nombre" required>
-                <label>Dirección:</label>
-                <textarea id="rest-direccion" required></textarea>
-                <label>Teléfono:</label>
-                <input type="text" id="rest-telefono" required>
-                <label>Tipo de cocina:</label>
-                <input type="text" id="rest-tipo" required placeholder="Ej: Mexicana, Italiana">
-                <label>Horario apertura:</label>
-                <input type="text" id="rest-apertura" value="09:00">
-                <label>Horario cierre:</label>
-                <input type="text" id="rest-cierre" value="22:00">
+                <label>Nombre:</label><input type="text" id="rest-nombre" required>
+                <label>Dirección:</label><textarea id="rest-direccion" required></textarea>
+                <label>Teléfono:</label><input type="text" id="rest-telefono" required>
+                <label>Tipo de cocina:</label><input type="text" id="rest-tipo" required placeholder="Ej: Mexicana, Italiana">
+                <label>Horario apertura:</label><input type="text" id="rest-apertura" value="09:00">
+                <label>Horario cierre:</label><input type="text" id="rest-cierre" value="22:00">
                 <button type="submit">Registrar Restaurante</button>
             </form>
-            <table>
-                <thead>
-                    <tr><th>ID</th><th>Nombre</th><th>Cocina</th><th>Horario</th><th>Acciones</th></tr>
-                </thead>
-                <tbody id="tabla-restaurantes"></tbody>
-            </table>
+            <table><thead><tr><th>ID</th><th>Nombre</th><th>Cocina</th><th>Horario</th><th>Acciones</th></tr></thead>
+            <tbody id="tabla-restaurantes"></tbody></table>
         </div>
-
-        <!-- ============ SECCIÓN MENÚ ============ -->
+        <!-- MENU -->
         <div id="sec-menu" class="seccion">
             <h2>📋 Gestión de Menú</h2>
             <p class="api-badge">🔗 Microservicio: Restaurantes API</p>
             <div id="msg-menu"></div>
             <form id="form-menu" onsubmit="agregarPlatillo(event)">
-                <label>Restaurante:</label>
-                <select id="menu-restaurante" required></select>
-                <label>Nombre del platillo:</label>
-                <input type="text" id="menu-nombre" required>
-                <label>Descripción:</label>
-                <textarea id="menu-descripcion"></textarea>
-                <label>Precio ($):</label>
-                <input type="number" id="menu-precio" step="0.01" min="0" required>
+                <label>Restaurante:</label><select id="menu-restaurante" required></select>
+                <label>Nombre del platillo:</label><input type="text" id="menu-nombre" required>
+                <label>Descripción:</label><textarea id="menu-descripcion"></textarea>
+                <label>Precio ($):</label><input type="number" id="menu-precio" step="0.01" min="0" required>
                 <button type="submit">Agregar Platillo</button>
             </form>
-            <table>
-                <thead>
-                    <tr><th>ID</th><th>Restaurante</th><th>Platillo</th><th>Precio</th><th>Disponible</th><th>Acciones</th></tr>
-                </thead>
-                <tbody id="tabla-menu"></tbody>
-            </table>
+            <table><thead><tr><th>ID</th><th>Restaurante</th><th>Platillo</th><th>Precio</th><th>Disponible</th><th>Acciones</th></tr></thead>
+            <tbody id="tabla-menu"></tbody></table>
         </div>
-
-        <!-- ============ SECCIÓN REPARTIDORES ============ -->
+        <!-- REPARTIDORES -->
         <div id="sec-repartidores" class="seccion">
             <h2>🚴 Gestión de Repartidores</h2>
             <p class="api-badge">🔗 Microservicio: Entregas API</p>
             <div id="msg-repartidores"></div>
             <form id="form-repartidor" onsubmit="crearRepartidor(event)">
-                <label>Nombre:</label>
-                <input type="text" id="rep-nombre" required>
-                <label>Teléfono:</label>
-                <input type="text" id="rep-telefono" required>
-                <label>Vehículo:</label>
-                <select id="rep-vehiculo" required>
-                    <option value="Bicicleta">Bicicleta</option>
-                    <option value="Moto">Moto</option>
-                    <option value="Auto">Auto</option>
-                </select>
+                <label>Nombre:</label><input type="text" id="rep-nombre" required>
+                <label>Teléfono:</label><input type="text" id="rep-telefono" required>
+                <label>Vehículo:</label><select id="rep-vehiculo" required><option value="Bicicleta">Bicicleta</option><option value="Moto">Moto</option><option value="Auto">Auto</option></select>
                 <button type="submit">Registrar Repartidor</button>
             </form>
-            <table>
-                <thead>
-                    <tr><th>ID</th><th>Nombre</th><th>Teléfono</th><th>Vehículo</th><th>Disponible</th><th>Acciones</th></tr>
-                </thead>
-                <tbody id="tabla-repartidores"></tbody>
-            </table>
+            <table><thead><tr><th>ID</th><th>Nombre</th><th>Teléfono</th><th>Vehículo</th><th>Disponible</th><th>Acciones</th></tr></thead>
+            <tbody id="tabla-repartidores"></tbody></table>
         </div>
-
-        <!-- ============ SECCIÓN PEDIDOS ============ -->
+        <!-- PEDIDOS -->
         <div id="sec-pedidos" class="seccion">
             <h2>📦 Gestión de Pedidos</h2>
-            <p class="api-badge">🔗 Microservicio: Pedidos API (orquesta Consumidores + Restaurantes + Entregas)</p>
+            <p class="api-badge">🔗 Microservicio: Pedidos API</p>
             <div id="msg-pedidos"></div>
             <form id="form-pedido" onsubmit="crearPedido(event)">
-                <label>Consumidor:</label>
-                <select id="ped-consumidor" required></select>
-                <label>Restaurante:</label>
-                <select id="ped-restaurante" required onchange="cargarMenuPedido()"></select>
-                <label>Dirección de entrega:</label>
-                <textarea id="ped-direccion" required></textarea>
-                <label>Platillos:</label>
-                <div id="ped-platillos" class="elementos-pedido">
-                    <p><em>Seleccione un restaurante para ver los platillos</em></p>
-                </div>
+                <label>Consumidor:</label><select id="ped-consumidor" required></select>
+                <label>Restaurante:</label><select id="ped-restaurante" required onchange="cargarMenuPedido()"></select>
+                <label>Dirección de entrega:</label><textarea id="ped-direccion" required></textarea>
+                <label>Platillos:</label><div id="ped-platillos" class="elementos-pedido"><p><em>Seleccione un restaurante</em></p></div>
                 <button type="submit">Crear Pedido</button>
             </form>
-            <table>
-                <thead>
-                    <tr><th>ID</th><th>Consumidor</th><th>Restaurante</th><th>Estado</th><th>Total</th><th>Acciones</th></tr>
-                </thead>
-                <tbody id="tabla-pedidos"></tbody>
-            </table>
+            <table><thead><tr><th>ID</th><th>Consumidor</th><th>Restaurante</th><th>Estado</th><th>Total</th><th>Acciones</th></tr></thead>
+            <tbody id="tabla-pedidos"></tbody></table>
         </div>
-
-        <!-- ============ SECCIÓN PAGOS ============ -->
+        <!-- PAGOS -->
         <div id="sec-pagos" class="seccion">
             <h2>💳 Gestión de Pagos</h2>
-            <p class="api-badge">🔗 Microservicio: Pagos API (consulta Pedidos API)</p>
+            <p class="api-badge">🔗 Microservicio: Pagos API</p>
             <div id="msg-pagos"></div>
             <form id="form-pago" onsubmit="procesarPago(event)">
-                <label>Pedido:</label>
-                <select id="pago-pedido" required></select>
-                <label>Método de pago:</label>
-                <select id="pago-metodo" required>
-                    <option value="tarjeta">Tarjeta de crédito</option>
-                    <option value="efectivo">Efectivo</option>
-                </select>
+                <label>Pedido:</label><select id="pago-pedido" required></select>
+                <label>Método de pago:</label><select id="pago-metodo" required><option value="tarjeta">Tarjeta</option><option value="efectivo">Efectivo</option></select>
                 <button type="submit">Procesar Pago</button>
             </form>
-            <table>
-                <thead>
-                    <tr><th>ID</th><th>Pedido</th><th>Monto</th><th>Método</th><th>Estado</th><th>Referencia</th></tr>
-                </thead>
-                <tbody id="tabla-pagos"></tbody>
-            </table>
+            <table><thead><tr><th>ID</th><th>Pedido</th><th>Monto</th><th>Método</th><th>Estado</th><th>Referencia</th></tr></thead>
+            <tbody id="tabla-pagos"></tbody></table>
         </div>
     </main>
-
-    <!-- Cargar configuración de URLs y luego la aplicación -->
-    <script src="config.js"></script>
-    <script src="app.js"></script>
+    <script>
+// === CONFIGURACIÓN ===
+const CONFIG = {
+    API_CONSUMIDORES: "https://REEMPLAZAR.execute-api.us-east-1.amazonaws.com/Prod",
+    API_RESTAURANTES: "https://REEMPLAZAR.execute-api.us-east-1.amazonaws.com/Prod",
+    API_PEDIDOS: "https://REEMPLAZAR.execute-api.us-east-1.amazonaws.com/Prod",
+    API_ENTREGAS: "https://REEMPLAZAR.execute-api.us-east-1.amazonaws.com/Prod",
+    API_PAGOS: "https://REEMPLAZAR.execute-api.us-east-1.amazonaws.com/Prod",
+};
+// === UTILIDADES ===
+const MSG_NO_IMPL = "⚠️ Microservicio aún no desplegado. Despliega el servicio y actualiza la URL.";
+function apiOk(url) { return url && !url.includes("REEMPLAZAR"); }
+function idCorto(id) { return id ? id.substring(0,8)+"..." : "-"; }
+function mostrarMensaje(sec, txt, tipo) {
+    const c = document.getElementById("msg-"+sec);
+    c.innerHTML = `<div class="mensaje mensaje-${tipo}">${txt}</div>`;
+    setTimeout(() => c.innerHTML = "", txt.includes("no") ? 8000 : 4000);
+}
+function mostrarSeccion(nombre) {
+    document.querySelectorAll(".seccion").forEach(s => s.classList.remove("visible"));
+    document.getElementById("sec-"+nombre).classList.add("visible");
+    document.querySelectorAll("nav button").forEach(b => b.classList.remove("activo"));
+    event.target.classList.add("activo");
+    cargarDatos(nombre);
+}
+function cargarDatos(s) {
+    switch(s) { case "consumidores": cargarConsumidores(); break; case "restaurantes": cargarRestaurantes(); break;
+    case "menu": cargarMenu(); break; case "repartidores": cargarRepartidores(); break;
+    case "pedidos": cargarPedidos(); break; case "pagos": cargarPagos(); break; }
+}
+async function fetchAPI(url, svc, opts={}) {
+    if (url.includes("REEMPLAZAR")) throw new Error(MSG_NO_IMPL+` [${svc}]`);
+    try { return await fetch(url, opts); } catch(e) { throw new Error(`⚠️ ${svc} no disponible.`); }
+}
+// === CONSUMIDORES ===
+async function cargarConsumidores() {
+    if (!apiOk(CONFIG.API_CONSUMIDORES)) { mostrarMensaje("consumidores",MSG_NO_IMPL,"error"); return; }
+    try {
+        const r = await fetchAPI(CONFIG.API_CONSUMIDORES+"/api/consumidores/","Consumidores");
+        const d = await r.json();
+        document.getElementById("tabla-consumidores").innerHTML = d.map(c =>
+            `<tr><td title="${c.id}">${idCorto(c.id)}</td><td>${c.nombre}</td><td>${c.email}</td><td>${c.telefono}</td><td><button class="btn btn-peligro" onclick="eliminarConsumidor('${c.id}')">Eliminar</button></td></tr>`
+        ).join("");
+    } catch(e) { mostrarMensaje("consumidores",e.message,"error"); }
+}
+async function crearConsumidor(ev) {
+    ev.preventDefault();
+    if (!apiOk(CONFIG.API_CONSUMIDORES)) { mostrarMensaje("consumidores",MSG_NO_IMPL,"error"); return; }
+    const datos = { nombre: document.getElementById("cons-nombre").value, email: document.getElementById("cons-email").value,
+        telefono: document.getElementById("cons-telefono").value, direccion: document.getElementById("cons-direccion").value };
+    try {
+        const r = await fetchAPI(CONFIG.API_CONSUMIDORES+"/api/consumidores/","Consumidores",
+            {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(datos)});
+        if (!r.ok) { const e=await r.json(); throw new Error(e.detail); }
+        mostrarMensaje("consumidores","Consumidor registrado","exito");
+        document.getElementById("form-consumidor").reset(); cargarConsumidores();
+    } catch(e) { mostrarMensaje("consumidores",e.message,"error"); }
+}
+async function eliminarConsumidor(id) {
+    if (!confirm("¿Eliminar?")) return;
+    try { await fetchAPI(CONFIG.API_CONSUMIDORES+"/api/consumidores/"+id,"Consumidores",{method:"DELETE"});
+        mostrarMensaje("consumidores","Eliminado","exito"); cargarConsumidores();
+    } catch(e) { mostrarMensaje("consumidores",e.message,"error"); }
+}
+// === RESTAURANTES ===
+async function cargarRestaurantes() {
+    if (!apiOk(CONFIG.API_RESTAURANTES)) { mostrarMensaje("restaurantes",MSG_NO_IMPL,"error"); return; }
+    try {
+        const r = await fetchAPI(CONFIG.API_RESTAURANTES+"/api/restaurantes/","Restaurantes");
+        const d = await r.json();
+        document.getElementById("tabla-restaurantes").innerHTML = d.map(x =>
+            `<tr><td title="${x.id}">${idCorto(x.id)}</td><td>${x.nombre}</td><td>${x.tipo_cocina}</td><td>${x.horario_apertura}-${x.horario_cierre}</td><td><button class="btn btn-peligro" onclick="eliminarRestaurante('${x.id}')">Eliminar</button></td></tr>`
+        ).join("");
+    } catch(e) { mostrarMensaje("restaurantes",e.message,"error"); }
+}
+async function crearRestaurante(ev) {
+    ev.preventDefault();
+    if (!apiOk(CONFIG.API_RESTAURANTES)) { mostrarMensaje("restaurantes",MSG_NO_IMPL,"error"); return; }
+    const datos = { nombre:document.getElementById("rest-nombre").value, direccion:document.getElementById("rest-direccion").value,
+        telefono:document.getElementById("rest-telefono").value, tipo_cocina:document.getElementById("rest-tipo").value,
+        horario_apertura:document.getElementById("rest-apertura").value, horario_cierre:document.getElementById("rest-cierre").value };
+    try {
+        const r = await fetchAPI(CONFIG.API_RESTAURANTES+"/api/restaurantes/","Restaurantes",
+            {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(datos)});
+        if (!r.ok) { const e=await r.json(); throw new Error(e.detail); }
+        mostrarMensaje("restaurantes","Restaurante registrado","exito");
+        document.getElementById("form-restaurante").reset(); cargarRestaurantes();
+    } catch(e) { mostrarMensaje("restaurantes",e.message,"error"); }
+}
+async function eliminarRestaurante(id) {
+    if (!confirm("¿Eliminar?")) return;
+    try { await fetchAPI(CONFIG.API_RESTAURANTES+"/api/restaurantes/"+id,"Restaurantes",{method:"DELETE"});
+        mostrarMensaje("restaurantes","Eliminado","exito"); cargarRestaurantes();
+    } catch(e) { mostrarMensaje("restaurantes",e.message,"error"); }
+}
+// === MENU ===
+async function cargarMenu() {
+    if (!apiOk(CONFIG.API_RESTAURANTES)) { mostrarMensaje("menu",MSG_NO_IMPL,"error"); return; }
+    try {
+        const r = await fetchAPI(CONFIG.API_RESTAURANTES+"/api/restaurantes/","Restaurantes");
+        const rests = await r.json();
+        document.getElementById("menu-restaurante").innerHTML = rests.map(x=>`<option value="${x.id}">${x.nombre}</option>`).join("");
+        let filas="";
+        for (const x of rests) { const rm=await fetchAPI(CONFIG.API_RESTAURANTES+"/api/restaurantes/"+x.id+"/menu/","Restaurantes"); const menu=await rm.json();
+            for (const p of menu) { filas+=`<tr><td>${idCorto(p.id)}</td><td>${x.nombre}</td><td>${p.nombre}</td><td>${p.precio.toFixed(2)}</td><td>${p.disponible?"Sí":"No"}</td><td><button class="btn btn-peligro" onclick="eliminarPlatillo('${p.id}')">X</button></td></tr>`; }}
+        document.getElementById("tabla-menu").innerHTML = filas||"<tr><td colspan='6'>Sin platillos</td></tr>";
+    } catch(e) { mostrarMensaje("menu",e.message,"error"); }
+}
+async function agregarPlatillo(ev) {
+    ev.preventDefault();
+    const rid=document.getElementById("menu-restaurante").value;
+    const datos={restaurante_id:rid,nombre:document.getElementById("menu-nombre").value,descripcion:document.getElementById("menu-descripcion").value,precio:parseFloat(document.getElementById("menu-precio").value),disponible:1};
+    try { const r=await fetchAPI(CONFIG.API_RESTAURANTES+"/api/restaurantes/"+rid+"/menu/","Restaurantes",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(datos)});
+        if(!r.ok){const e=await r.json();throw new Error(e.detail);} mostrarMensaje("menu","Platillo agregado","exito"); document.getElementById("form-menu").reset(); cargarMenu();
+    } catch(e){mostrarMensaje("menu",e.message,"error");}
+}
+async function eliminarPlatillo(id){try{await fetchAPI(CONFIG.API_RESTAURANTES+"/api/restaurantes/menu/"+id,"Restaurantes",{method:"DELETE"});cargarMenu();}catch(e){mostrarMensaje("menu",e.message,"error");}}
+// === REPARTIDORES ===
+async function cargarRepartidores() {
+    if (!apiOk(CONFIG.API_ENTREGAS)){mostrarMensaje("repartidores",MSG_NO_IMPL,"error");return;}
+    try{const r=await fetchAPI(CONFIG.API_ENTREGAS+"/api/repartidores/","Entregas");const d=await r.json();
+        document.getElementById("tabla-repartidores").innerHTML=d.map(x=>`<tr><td>${idCorto(x.id)}</td><td>${x.nombre}</td><td>${x.telefono}</td><td>${x.vehiculo}</td><td>${x.disponible?"✅":"❌"}</td><td><button class="btn btn-peligro" onclick="eliminarRepartidor('${x.id}')">X</button></td></tr>`).join("");
+    }catch(e){mostrarMensaje("repartidores",e.message,"error");}
+}
+async function crearRepartidor(ev){ev.preventDefault();if(!apiOk(CONFIG.API_ENTREGAS)){mostrarMensaje("repartidores",MSG_NO_IMPL,"error");return;}
+    const datos={nombre:document.getElementById("rep-nombre").value,telefono:document.getElementById("rep-telefono").value,vehiculo:document.getElementById("rep-vehiculo").value};
+    try{const r=await fetchAPI(CONFIG.API_ENTREGAS+"/api/repartidores/","Entregas",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(datos)});
+        if(!r.ok){const e=await r.json();throw new Error(e.detail);}mostrarMensaje("repartidores","Registrado","exito");document.getElementById("form-repartidor").reset();cargarRepartidores();
+    }catch(e){mostrarMensaje("repartidores",e.message,"error");}
+}
+async function eliminarRepartidor(id){if(!confirm("¿Eliminar?"))return;try{await fetchAPI(CONFIG.API_ENTREGAS+"/api/repartidores/"+id,"Entregas",{method:"DELETE"});cargarRepartidores();}catch(e){mostrarMensaje("repartidores",e.message,"error");}}
+// === PEDIDOS ===
+let platillosDisp=[];
+async function cargarPedidos(){
+    try{if(apiOk(CONFIG.API_CONSUMIDORES)){const r=await fetchAPI(CONFIG.API_CONSUMIDORES+"/api/consumidores/","Consumidores");const c=await r.json();document.getElementById("ped-consumidor").innerHTML=c.map(x=>`<option value="${x.id}">${x.nombre}</option>`).join("");}else{document.getElementById("ped-consumidor").innerHTML=`<option>⚠️ No disponible</option>`;}}catch(e){document.getElementById("ped-consumidor").innerHTML=`<option>⚠️ No disponible</option>`;}
+    try{if(apiOk(CONFIG.API_RESTAURANTES)){const r=await fetchAPI(CONFIG.API_RESTAURANTES+"/api/restaurantes/","Restaurantes");const rs=await r.json();document.getElementById("ped-restaurante").innerHTML=`<option value="">-- Seleccione --</option>`+rs.map(x=>`<option value="${x.id}">${x.nombre}</option>`).join("");}else{document.getElementById("ped-restaurante").innerHTML=`<option>⚠️ No disponible</option>`;}}catch(e){document.getElementById("ped-restaurante").innerHTML=`<option>⚠️ No disponible</option>`;}
+    if(!apiOk(CONFIG.API_PEDIDOS)){mostrarMensaje("pedidos",MSG_NO_IMPL,"error");return;}
+    try{const r=await fetchAPI(CONFIG.API_PEDIDOS+"/api/pedidos/","Pedidos");const d=await r.json();
+        document.getElementById("tabla-pedidos").innerHTML=d.map(p=>`<tr><td>${idCorto(p.id)}</td><td>${idCorto(p.consumidor_id)}</td><td>${idCorto(p.restaurante_id)}</td><td><span class="estado estado-${p.estado}">${p.estado}</span></td><td>${p.total.toFixed(2)}</td><td>${botonesEstado(p)}</td></tr>`).join("");
+    }catch(e){mostrarMensaje("pedidos",e.message,"error");}
+}
+function botonesEstado(p){let b=[];switch(p.estado){case"CREADO":b.push(`<button class="btn btn-exito" onclick="cambiarEstado('${p.id}','ACEPTADO')">Aceptar</button>`);b.push(`<button class="btn btn-peligro" onclick="cancelarPedido('${p.id}')">Cancelar</button>`);break;case"ACEPTADO":b.push(`<button class="btn" onclick="cambiarEstado('${p.id}','PREPARANDO')">Preparar</button>`);break;case"PREPARANDO":b.push(`<button class="btn btn-exito" onclick="cambiarEstado('${p.id}','LISTO')">Listo</button>`);break;case"LISTO":b.push(`<button class="btn" onclick="asignarRep('${p.id}')">Asignar</button>`);break;case"EN_CAMINO":b.push(`<button class="btn btn-exito" onclick="cambiarEstado('${p.id}','ENTREGADO')">Entregado</button>`);break;}return b.join(" ");}
+async function cargarMenuPedido(){const rid=document.getElementById("ped-restaurante").value;const c=document.getElementById("ped-platillos");if(!rid){c.innerHTML="<p><em>Seleccione restaurante</em></p>";return;}
+    try{const r=await fetchAPI(CONFIG.API_RESTAURANTES+"/api/restaurantes/"+rid+"/menu/","Restaurantes");platillosDisp=await r.json();
+        c.innerHTML=platillosDisp.map(p=>`<div class="elemento-linea"><label><input type="checkbox" class="plat-chk" value="${p.id}"> ${p.nombre} - $${p.precio.toFixed(2)}</label><input type="number" class="plat-cant" data-id="${p.id}" value="1" min="1" max="10" style="width:60px"></div>`).join("");
+    }catch(e){c.innerHTML=`<p class="mensaje mensaje-error">${e.message}</p>`;}}
+async function crearPedido(ev){ev.preventDefault();if(!apiOk(CONFIG.API_PEDIDOS)){mostrarMensaje("pedidos",MSG_NO_IMPL,"error");return;}
+    const chks=document.querySelectorAll(".plat-chk:checked");if(chks.length===0){mostrarMensaje("pedidos","Seleccione platillos","error");return;}
+    const elems=[];chks.forEach(ch=>{const id=ch.value;const cant=document.querySelector(`.plat-cant[data-id="${id}"]`);elems.push({elemento_menu_id:id,cantidad:parseInt(cant.value)});});
+    const datos={consumidor_id:document.getElementById("ped-consumidor").value,restaurante_id:document.getElementById("ped-restaurante").value,direccion_entrega:document.getElementById("ped-direccion").value,elementos:elems};
+    try{const r=await fetchAPI(CONFIG.API_PEDIDOS+"/api/pedidos/","Pedidos",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(datos)});
+        if(!r.ok){const e=await r.json();throw new Error(e.detail);}mostrarMensaje("pedidos","Pedido creado","exito");document.getElementById("form-pedido").reset();document.getElementById("ped-platillos").innerHTML="<p><em>Seleccione restaurante</em></p>";cargarPedidos();
+    }catch(e){mostrarMensaje("pedidos",e.message,"error");}}
+async function cambiarEstado(pid,est){try{const r=await fetchAPI(CONFIG.API_PEDIDOS+"/api/pedidos/"+pid+"/estado","Pedidos",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({estado:est})});if(!r.ok){const e=await r.json();throw new Error(e.detail);}cargarPedidos();}catch(e){mostrarMensaje("pedidos",e.message,"error");}}
+async function asignarRep(pid){if(!apiOk(CONFIG.API_ENTREGAS)){mostrarMensaje("pedidos","Entregas no disponible","error");return;}
+    try{const r=await fetchAPI(CONFIG.API_ENTREGAS+"/api/repartidores/","Entregas");const reps=(await r.json()).filter(x=>x.disponible);if(!reps.length){mostrarMensaje("pedidos","Sin repartidores","error");return;}
+        const i=prompt("Seleccione (1-"+reps.length+"):\n"+reps.map((x,i)=>(i+1)+". "+x.nombre+" ("+x.vehiculo+")").join("\n"));if(i){const rep=reps[parseInt(i)-1];if(!rep)return;
+            await fetchAPI(CONFIG.API_PEDIDOS+"/api/pedidos/"+pid+"/repartidor","Pedidos",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({repartidor_id:rep.id})});await cambiarEstado(pid,"EN_CAMINO");}
+    }catch(e){mostrarMensaje("pedidos",e.message,"error");}}
+async function cancelarPedido(pid){if(!confirm("¿Cancelar?"))return;try{await fetchAPI(CONFIG.API_PEDIDOS+"/api/pedidos/"+pid,"Pedidos",{method:"DELETE"});cargarPedidos();}catch(e){mostrarMensaje("pedidos",e.message,"error");}}
+// === PAGOS ===
+async function cargarPagos(){
+    try{if(apiOk(CONFIG.API_PEDIDOS)){const r=await fetchAPI(CONFIG.API_PEDIDOS+"/api/pedidos/","Pedidos");const ps=(await r.json()).filter(p=>p.estado!=="CANCELADO");document.getElementById("pago-pedido").innerHTML=ps.map(p=>`<option value="${p.id}">Pedido ${idCorto(p.id)} - $${p.total.toFixed(2)}</option>`).join("");}else{document.getElementById("pago-pedido").innerHTML=`<option>⚠️ No disponible</option>`;}}catch(e){document.getElementById("pago-pedido").innerHTML=`<option>⚠️ No disponible</option>`;}
+    if(!apiOk(CONFIG.API_PAGOS)){mostrarMensaje("pagos",MSG_NO_IMPL,"error");return;}
+    try{const r=await fetchAPI(CONFIG.API_PAGOS+"/api/pagos/","Pagos");const d=await r.json();
+        document.getElementById("tabla-pagos").innerHTML=d.map(p=>`<tr><td>${idCorto(p.id)}</td><td>${idCorto(p.pedido_id)}</td><td>${p.monto.toFixed(2)}</td><td>${p.metodo_pago}</td><td>${p.estado}</td><td>${p.referencia}</td></tr>`).join("");
+    }catch(e){mostrarMensaje("pagos",e.message,"error");}
+}
+async function procesarPago(ev){ev.preventDefault();if(!apiOk(CONFIG.API_PAGOS)){mostrarMensaje("pagos",MSG_NO_IMPL,"error");return;}
+    const datos={pedido_id:document.getElementById("pago-pedido").value,metodo_pago:document.getElementById("pago-metodo").value};
+    try{const r=await fetchAPI(CONFIG.API_PAGOS+"/api/pagos/","Pagos",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(datos)});
+        if(!r.ok){const e=await r.json();throw new Error(e.detail);}mostrarMensaje("pagos","Pago procesado","exito");cargarPagos();
+    }catch(e){mostrarMensaje("pagos",e.message,"error");}}
+// === INIT ===
+document.addEventListener("DOMContentLoaded",()=>{cargarConsumidores();});
+    </script>
 </body>
 </html>

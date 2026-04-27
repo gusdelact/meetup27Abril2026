@@ -1,8 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: >
-  FTGO Frontend — Lambda + API Gateway como servidor web.
-  Sirve archivos estáticos (HTML/CSS/JS) via Lambda.
+Description: FTGO Frontend — HTML servido por Lambda + API Gateway.
 
 Globals:
   Function:
@@ -17,58 +15,20 @@ Resources:
       FunctionName: ftgo-frontend
       Handler: handler.lambda_handler
       CodeUri: src/
-      Description: Sirve archivos estáticos del frontend FTGO
+      Description: Sirve el frontend FTGO (HTML con CSS/JS inline)
       Events:
         Root:
           Type: Api
           Properties:
             Path: /
             Method: GET
-        IndexHtml:
-          Type: Api
-          Properties:
-            Path: /index.html
-            Method: GET
-        StyleCss:
-          Type: Api
-          Properties:
-            Path: /style.css
-            Method: GET
-        AppJs:
-          Type: Api
-          Properties:
-            Path: /app.js
-            Method: GET
-        ConfigJs:
-          Type: Api
-          Properties:
-            Path: /config.js
-            Method: GET
-        Favicon:
-          Type: Api
-          Properties:
-            Path: /favicon.ico
-            Method: GET
-        ProxyGet:
+        AnyPath:
           Type: Api
           Properties:
             Path: /{proxy+}
             Method: GET
-        OptionsRoot:
-          Type: Api
-          Properties:
-            Path: /
-            Method: OPTIONS
-        OptionsProxy:
-          Type: Api
-          Properties:
-            Path: /{proxy+}
-            Method: OPTIONS
 
 Outputs:
   FrontendUrl:
     Description: URL del frontend
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
-  FunctionArn:
-    Description: ARN de la función Lambda del frontend
-    Value: !GetAtt FrontendFunction.Arn
