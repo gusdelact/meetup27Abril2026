@@ -1,0 +1,113 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  FTGO Microservicio Consumidores — Gestión de clientes.
+  Despliega una función Lambda + API Gateway + DynamoDB.
+
+# ============================================================
+# Variables globales que aplican a todas las funciones Lambda
+# ============================================================
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: python3.13
+    MemorySize: 128
+    Environment:
+      Variables:
+        TABLA_CONSUMIDORES: !Ref TablaConsumidores
+
+# ============================================================
+# Recursos de AWS que se crean con este stack
+# ============================================================
+Resources:
+
+  # ----------------------------------------------------------
+  # Función Lambda — contiene toda la lógica del microservicio
+  # ----------------------------------------------------------
+  ConsumidoresFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: ftgo-consumidores
+      Handler: handler.lambda_handler
+      CodeUri: src/
+      Description: CRUD de consumidores del sistema FTGO
+      Policies:
+        # Permiso para leer y escribir en la tabla DynamoDB
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TablaConsumidores
+      Events:
+        # Cada evento define una ruta del API Gateway
+        CrearConsumidor:
+          Type: Api
+          Properties:
+            Path: /api/consumidores/
+            Method: POST
+        ListarConsumidores:
+          Type: Api
+          Properties:
+            Path: /api/consumidores/
+            Method: GET
+        ObtenerConsumidor:
+          Type: Api
+          Properties:
+            Path: /api/consumidores/{id}
+            Method: GET
+        ActualizarConsumidor:
+          Type: Api
+          Properties:
+            Path: /api/consumidores/{id}
+            Method: PUT
+        EliminarConsumidor:
+          Type: Api
+          Properties:
+            Path: /api/consumidores/{id}
+            Method: DELETE
+        # CORS preflight
+        OptionsCons:
+          Type: Api
+          Properties:
+            Path: /api/consumidores/
+            Method: OPTIONS
+        OptionsConsId:
+          Type: Api
+          Properties:
+            Path: /api/consumidores/{id}
+            Method: OPTIONS
+
+  # ----------------------------------------------------------
+  # Tabla DynamoDB — almacena los datos de consumidores
+  # ----------------------------------------------------------
+  TablaConsumidores:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ftgo-consumidores
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: email-index
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+# ============================================================
+# Salidas — valores útiles después del despliegue
+# ============================================================
+Outputs:
+  ApiUrl:
+    Description: URL del API Gateway para consumidores
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+  FunctionArn:
+    Description: ARN de la función Lambda
+    Value: !GetAtt ConsumidoresFunction.Arn
+  TableName:
+    Description: Nombre de la tabla DynamoDB
+    Value: !Ref TablaConsumidores

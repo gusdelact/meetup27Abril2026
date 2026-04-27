@@ -1,0 +1,83 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  FTGO Microservicio Entregas — Gestión de repartidores.
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: python3.13
+    MemorySize: 128
+    Environment:
+      Variables:
+        TABLA_REPARTIDORES: !Ref TablaRepartidores
+
+Resources:
+
+  EntregasFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: ftgo-entregas
+      Handler: handler.lambda_handler
+      CodeUri: src/
+      Description: CRUD de repartidores del sistema FTGO
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TablaRepartidores
+      Events:
+        CrearRepartidor:
+          Type: Api
+          Properties:
+            Path: /api/repartidores/
+            Method: POST
+        ListarRepartidores:
+          Type: Api
+          Properties:
+            Path: /api/repartidores/
+            Method: GET
+        ObtenerRepartidor:
+          Type: Api
+          Properties:
+            Path: /api/repartidores/{id}
+            Method: GET
+        ActualizarRepartidor:
+          Type: Api
+          Properties:
+            Path: /api/repartidores/{id}
+            Method: PUT
+        EliminarRepartidor:
+          Type: Api
+          Properties:
+            Path: /api/repartidores/{id}
+            Method: DELETE
+        OptionsRep:
+          Type: Api
+          Properties:
+            Path: /api/repartidores/
+            Method: OPTIONS
+        OptionsRepId:
+          Type: Api
+          Properties:
+            Path: /api/repartidores/{id}
+            Method: OPTIONS
+
+  TablaRepartidores:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ftgo-repartidores
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+Outputs:
+  ApiUrl:
+    Description: URL del API Gateway para entregas/repartidores
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+  FunctionArn:
+    Value: !GetAtt EntregasFunction.Arn
+  TableName:
+    Value: !Ref TablaRepartidores

@@ -1,0 +1,130 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  FTGO Microservicio Pedidos — Gestión del ciclo de vida de pedidos.
+  Este es el servicio más complejo: valida consumidores y restaurantes
+  llamando a los otros microservicios.
+
+Parameters:
+  ApiConsumidoresUrl:
+    Type: String
+    Description: URL del API Gateway del microservicio de consumidores
+    Default: ""
+  ApiRestaurantesUrl:
+    Type: String
+    Description: URL del API Gateway del microservicio de restaurantes
+    Default: ""
+  ApiEntregasUrl:
+    Type: String
+    Description: URL del API Gateway del microservicio de entregas
+    Default: ""
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: python3.13
+    MemorySize: 256
+    Environment:
+      Variables:
+        TABLA_PEDIDOS: !Ref TablaPedidos
+        API_CONSUMIDORES_URL: !Ref ApiConsumidoresUrl
+        API_RESTAURANTES_URL: !Ref ApiRestaurantesUrl
+        API_ENTREGAS_URL: !Ref ApiEntregasUrl
+
+Resources:
+
+  PedidosFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: ftgo-pedidos
+      Handler: handler.lambda_handler
+      CodeUri: src/
+      Description: Gestión de pedidos del sistema FTGO
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TablaPedidos
+      Events:
+        CrearPedido:
+          Type: Api
+          Properties:
+            Path: /api/pedidos/
+            Method: POST
+        ListarPedidos:
+          Type: Api
+          Properties:
+            Path: /api/pedidos/
+            Method: GET
+        ObtenerPedido:
+          Type: Api
+          Properties:
+            Path: /api/pedidos/{id}
+            Method: GET
+        ActualizarEstado:
+          Type: Api
+          Properties:
+            Path: /api/pedidos/{id}/estado
+            Method: PUT
+        AsignarRepartidor:
+          Type: Api
+          Properties:
+            Path: /api/pedidos/{id}/repartidor
+            Method: PUT
+        CancelarPedido:
+          Type: Api
+          Properties:
+            Path: /api/pedidos/{id}
+            Method: DELETE
+        OptionsPed:
+          Type: Api
+          Properties:
+            Path: /api/pedidos/
+            Method: OPTIONS
+        OptionsPedId:
+          Type: Api
+          Properties:
+            Path: /api/pedidos/{id}
+            Method: OPTIONS
+        OptionsPedEstado:
+          Type: Api
+          Properties:
+            Path: /api/pedidos/{id}/estado
+            Method: OPTIONS
+        OptionsPedRep:
+          Type: Api
+          Properties:
+            Path: /api/pedidos/{id}/repartidor
+            Method: OPTIONS
+
+  TablaPedidos:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ftgo-pedidos
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+        - AttributeName: consumidor_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: consumidor-index
+          KeySchema:
+            - AttributeName: consumidor_id
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+Outputs:
+  ApiUrl:
+    Description: URL del API Gateway para pedidos
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+  FunctionArn:
+    Value: !GetAtt PedidosFunction.Arn
+  TableName:
+    Value: !Ref TablaPedidos

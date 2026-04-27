@@ -1,0 +1,120 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  FTGO Microservicio Restaurantes — Gestión de restaurantes y menús.
+  Usa single-table design: restaurantes y elementos del menú en la misma tabla.
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: python3.13
+    MemorySize: 128
+    Environment:
+      Variables:
+        TABLA_RESTAURANTES: !Ref TablaRestaurantes
+
+Resources:
+
+  RestaurantesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: ftgo-restaurantes
+      Handler: handler.lambda_handler
+      CodeUri: src/
+      Description: CRUD de restaurantes y menús del sistema FTGO
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TablaRestaurantes
+      Events:
+        CrearRestaurante:
+          Type: Api
+          Properties:
+            Path: /api/restaurantes/
+            Method: POST
+        ListarRestaurantes:
+          Type: Api
+          Properties:
+            Path: /api/restaurantes/
+            Method: GET
+        ObtenerRestaurante:
+          Type: Api
+          Properties:
+            Path: /api/restaurantes/{id}
+            Method: GET
+        ActualizarRestaurante:
+          Type: Api
+          Properties:
+            Path: /api/restaurantes/{id}
+            Method: PUT
+        EliminarRestaurante:
+          Type: Api
+          Properties:
+            Path: /api/restaurantes/{id}
+            Method: DELETE
+        AgregarMenu:
+          Type: Api
+          Properties:
+            Path: /api/restaurantes/{id}/menu/
+            Method: POST
+        ObtenerMenu:
+          Type: Api
+          Properties:
+            Path: /api/restaurantes/{id}/menu/
+            Method: GET
+        ActualizarMenu:
+          Type: Api
+          Properties:
+            Path: /api/restaurantes/menu/{elemento_id}
+            Method: PUT
+        EliminarMenu:
+          Type: Api
+          Properties:
+            Path: /api/restaurantes/menu/{elemento_id}
+            Method: DELETE
+        # CORS preflight
+        OptionsRest:
+          Type: Api
+          Properties:
+            Path: /api/restaurantes/
+            Method: OPTIONS
+        OptionsRestId:
+          Type: Api
+          Properties:
+            Path: /api/restaurantes/{id}
+            Method: OPTIONS
+        OptionsMenu:
+          Type: Api
+          Properties:
+            Path: /api/restaurantes/{id}/menu/
+            Method: OPTIONS
+        OptionsMenuId:
+          Type: Api
+          Properties:
+            Path: /api/restaurantes/menu/{elemento_id}
+            Method: OPTIONS
+
+  # Tabla DynamoDB con single-table design (PK + SK)
+  TablaRestaurantes:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ftgo-restaurantes
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+
+Outputs:
+  ApiUrl:
+    Description: URL del API Gateway para restaurantes
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+  FunctionArn:
+    Value: !GetAtt RestaurantesFunction.Arn
+  TableName:
+    Value: !Ref TablaRestaurantes

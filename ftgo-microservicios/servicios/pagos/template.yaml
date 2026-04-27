@@ -1,0 +1,90 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  FTGO Microservicio Pagos — Procesamiento de pagos.
+  Consulta el microservicio de Pedidos para obtener el total.
+
+Parameters:
+  ApiPedidosUrl:
+    Type: String
+    Description: URL del API Gateway del microservicio de pedidos
+    Default: ""
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: python3.13
+    MemorySize: 128
+    Environment:
+      Variables:
+        TABLA_PAGOS: !Ref TablaPagos
+        API_PEDIDOS_URL: !Ref ApiPedidosUrl
+
+Resources:
+
+  PagosFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: ftgo-pagos
+      Handler: handler.lambda_handler
+      CodeUri: src/
+      Description: Procesamiento de pagos del sistema FTGO
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TablaPagos
+      Events:
+        ProcesarPago:
+          Type: Api
+          Properties:
+            Path: /api/pagos/
+            Method: POST
+        ListarPagos:
+          Type: Api
+          Properties:
+            Path: /api/pagos/
+            Method: GET
+        ObtenerPago:
+          Type: Api
+          Properties:
+            Path: /api/pagos/{id}
+            Method: GET
+        OptionsPag:
+          Type: Api
+          Properties:
+            Path: /api/pagos/
+            Method: OPTIONS
+        OptionsPagId:
+          Type: Api
+          Properties:
+            Path: /api/pagos/{id}
+            Method: OPTIONS
+
+  TablaPagos:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ftgo-pagos
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: pedido_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: pedido-index
+          KeySchema:
+            - AttributeName: pedido_id
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+Outputs:
+  ApiUrl:
+    Description: URL del API Gateway para pagos
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+  FunctionArn:
+    Value: !GetAtt PagosFunction.Arn
+  TableName:
+    Value: !Ref TablaPagos
