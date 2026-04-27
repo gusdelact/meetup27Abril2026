@@ -464,19 +464,23 @@ ftgo-microservicios/
 
 ## 8. Configuración del Frontend
 
+El frontend se sirve mediante una Lambda propia con API Gateway (mismo patrón serverless
+que los microservicios). El HTML incluye CSS y JS inline para evitar problemas de routing
+con archivos estáticos en API Gateway.
+
 El frontend se modifica para:
 1. Usar URLs de API Gateway en lugar de rutas relativas
-2. Configurar las URLs de cada microservicio via un archivo `config.js`
+2. Configurar las URLs de cada microservicio directamente en el JavaScript del HTML
 3. Habilitar CORS en cada API Gateway
 
 ```javascript
-// config.js — URLs de los API Gateway de cada microservicio
+// URLs de los API Gateway de cada microservicio (dentro del HTML inline)
 const CONFIG = {
-    API_CONSUMIDORES: "https://<api-id>.execute-api.<region>.amazonaws.com/prod",
-    API_RESTAURANTES: "https://<api-id>.execute-api.<region>.amazonaws.com/prod",
-    API_PEDIDOS: "https://<api-id>.execute-api.<region>.amazonaws.com/prod",
-    API_ENTREGAS: "https://<api-id>.execute-api.<region>.amazonaws.com/prod",
-    API_PAGOS: "https://<api-id>.execute-api.<region>.amazonaws.com/prod",
+    API_CONSUMIDORES: "https://<api-id>.execute-api.<region>.amazonaws.com/Prod",
+    API_RESTAURANTES: "https://<api-id>.execute-api.<region>.amazonaws.com/Prod",
+    API_PEDIDOS: "https://<api-id>.execute-api.<region>.amazonaws.com/Prod",
+    API_ENTREGAS: "https://<api-id>.execute-api.<region>.amazonaws.com/Prod",
+    API_PAGOS: "https://<api-id>.execute-api.<region>.amazonaws.com/Prod",
 };
 ```
 

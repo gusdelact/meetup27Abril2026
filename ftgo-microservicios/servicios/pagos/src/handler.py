@@ -158,5 +158,5 @@ def respuesta(codigo_estado, cuerpo):
     return {
         "statusCode": codigo_estado,
         "headers": CORS_HEADERS,
-        "body": json.dumps(cuerpo, ensure_ascii=False, default=str) if cuerpo else "",
+        "body": json.dumps(cuerpo, ensure_ascii=False, default=str) if cuerpo is not None else "",
     }

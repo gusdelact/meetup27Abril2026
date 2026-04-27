@@ -688,7 +688,7 @@ Los servicios deben desplegarse en este orden (por dependencias):
 3. ftgo-repartidores    (sin dependencias)
 4. ftgo-pedidos         (depende de consumidores, restaurantes, repartidores)
 5. ftgo-pagos           (depende de pedidos)
-6. ftgo-frontend        (depende de todos los APIs — necesita las URLs)
+6. ftgo-frontend        (depende de todos los APIs — las URLs se configuran en el HTML)
 ```
 
 > Después del primer despliegue, cada servicio se puede actualizar
