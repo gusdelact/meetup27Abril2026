@@ -57,7 +57,10 @@ def lambda_handler(event, context):
     - event['body'] → cuerpo de la petición (JSON como string)
     """
     metodo = event["httpMethod"]
-    ruta = event.get("resource", "")
+    ruta = event.get("resource", event.get("path", ""))
+
+    # Normalizar: quitar trailing slash para comparación consistente
+    ruta_norm = ruta.rstrip("/")
 
     # Responder a preflight CORS (el navegador envía OPTIONS antes de POST/PUT)
     if metodo == "OPTIONS":
@@ -65,28 +68,28 @@ def lambda_handler(event, context):
 
     # Enrutar la petición según el método HTTP y la ruta
     try:
-        if ruta == "/api/consumidores/" and metodo == "GET":
+        if ruta_norm == "/api/consumidores" and metodo == "GET":
             return listar_consumidores()
 
-        elif ruta == "/api/consumidores/" and metodo == "POST":
+        elif ruta_norm == "/api/consumidores" and metodo == "POST":
             cuerpo = json.loads(event["body"])
             return crear_consumidor(cuerpo)
 
-        elif ruta == "/api/consumidores/{id}" and metodo == "GET":
-            consumidor_id = event["pathParameters"]["id"]
+        elif "/api/consumidores/" in ruta and metodo == "GET":
+            consumidor_id = event.get("pathParameters", {}).get("id") or ruta.split("/")[-1]
             return obtener_consumidor(consumidor_id)
 
-        elif ruta == "/api/consumidores/{id}" and metodo == "PUT":
-            consumidor_id = event["pathParameters"]["id"]
+        elif "/api/consumidores/" in ruta and metodo == "PUT":
+            consumidor_id = event.get("pathParameters", {}).get("id") or ruta.split("/")[-1]
             cuerpo = json.loads(event["body"])
             return actualizar_consumidor(consumidor_id, cuerpo)
 
-        elif ruta == "/api/consumidores/{id}" and metodo == "DELETE":
-            consumidor_id = event["pathParameters"]["id"]
+        elif "/api/consumidores/" in ruta and metodo == "DELETE":
+            consumidor_id = event.get("pathParameters", {}).get("id") or ruta.split("/")[-1]
             return eliminar_consumidor(consumidor_id)
 
         else:
-            return respuesta(404, {"detail": "Ruta no encontrada"})
+            return respuesta(404, {"detail": f"Ruta no encontrada: {metodo} {ruta}"})
 
     except Exception as error:
         print(f"Error: {error}")
