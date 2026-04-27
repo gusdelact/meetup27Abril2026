@@ -1,10 +1,8 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  FTGO Frontend — Hosting con Lambda + API Gateway.
-  Sirve los archivos estáticos (HTML/CSS/JS) a través de una
-  función Lambda que actúa como servidor web simple.
-  Alternativa a S3+CloudFront cuando no están disponibles.
+  FTGO Frontend — Lambda + API Gateway como servidor web.
+  Sirve archivos estáticos (HTML/CSS/JS) via Lambda.
 
 Globals:
   Function:
@@ -13,7 +11,6 @@ Globals:
     MemorySize: 128
 
 Resources:
-
   FrontendFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -27,7 +24,32 @@ Resources:
           Properties:
             Path: /
             Method: GET
-        StaticFile:
+        IndexHtml:
+          Type: Api
+          Properties:
+            Path: /index.html
+            Method: GET
+        StyleCss:
+          Type: Api
+          Properties:
+            Path: /style.css
+            Method: GET
+        AppJs:
+          Type: Api
+          Properties:
+            Path: /app.js
+            Method: GET
+        ConfigJs:
+          Type: Api
+          Properties:
+            Path: /config.js
+            Method: GET
+        Favicon:
+          Type: Api
+          Properties:
+            Path: /favicon.ico
+            Method: GET
+        ProxyGet:
           Type: Api
           Properties:
             Path: /{proxy+}
