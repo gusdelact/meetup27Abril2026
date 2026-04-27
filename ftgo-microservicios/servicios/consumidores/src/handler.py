@@ -57,7 +57,7 @@ def lambda_handler(event, context):
     - event['body'] → cuerpo de la petición (JSON como string)
     """
     metodo = event["httpMethod"]
-    ruta = event.get("resource", event.get("path", ""))
+    ruta = event.get("path", event.get("resource", ""))
 
     # Normalizar: quitar trailing slash para comparación consistente
     ruta_norm = ruta.rstrip("/")

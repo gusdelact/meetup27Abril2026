@@ -37,8 +37,8 @@ graph TB
     end
 
     subgraph "Hosting Frontend"
-        CF[CloudFront<br/>CDN Global]
-        S3[S3 Bucket<br/>Archivos Estáticos]
+        APIGW_FE[API Gateway<br/>Frontend]
+        LAMBDA_FE[Lambda<br/>frontend_handler]
     end
 
     subgraph "Microservicio Consumidores"
@@ -71,8 +71,8 @@ graph TB
         DDB_PAG[(DynamoDB<br/>ftgo-pagos)]
     end
 
-    NAV -->|HTTPS| CF
-    CF --> S3
+    NAV -->|HTTPS| APIGW_FE
+    APIGW_FE --> LAMBDA_FE
     NAV -->|REST API| APIGW_C
     NAV -->|REST API| APIGW_R
     NAV -->|REST API| APIGW_P
@@ -97,8 +97,8 @@ graph TB
     LAMBDA_PAG --> DDB_PAG
     LAMBDA_PAG -.->|Consulta pedido| APIGW_P
 
-    style CF fill:#f9a825,stroke:#f57f17
-    style S3 fill:#f9e79f,stroke:#f39c12
+    style APIGW_FE fill:#f9a825,stroke:#f57f17
+    style LAMBDA_FE fill:#f9e79f,stroke:#f39c12
     style DDB_C fill:#a9dfbf,stroke:#27ae60
     style DDB_R fill:#a9dfbf,stroke:#27ae60
     style DDB_P fill:#a9dfbf,stroke:#27ae60
@@ -151,16 +151,12 @@ graph LR
     subgraph "AWS"
         SAM[SAM Build<br/>+ Package]
         CFN[CloudFormation<br/>Deploy Stack]
-        S3D[S3 Deploy<br/>Frontend]
-        CFNINV[CloudFront<br/>Invalidation]
     end
 
     DEV --> REPO
     REPO -->|trigger| GHA
     GHA -->|sam build & deploy| SAM
     SAM --> CFN
-    GHA -->|aws s3 sync| S3D
-    S3D --> CFNINV
 
     style GHA fill:#d5f5e3,stroke:#27ae60
     style CFN fill:#aed6f1,stroke:#2980b9
@@ -314,7 +310,7 @@ Patrones de acceso:
 ## 5. API Endpoints (se mantienen iguales al monolito)
 
 Cada API Gateway expone los mismos endpoints que el monolito, con CORS habilitado
-para que el frontend en S3/CloudFront pueda invocarlos.
+para que el frontend pueda invocarlos.
 
 ### Consumidores API (`https://<api-id>.execute-api.<region>.amazonaws.com/prod`)
 | Método | Ruta | Lambda Handler |
@@ -375,11 +371,11 @@ ftgo-microservicios/
 ├── DEPLOY.md                          ← Guía de despliegue
 │
 ├── frontend/                          ← Repositorio del frontend
-│   ├── template.yaml                  ← CloudFormation (S3 + CloudFront)
-│   ├── static/
-│   │   ├── index.html
-│   │   ├── style.css
-│   │   └── app.js                     ← Actualizado para invocar múltiples APIs
+│   ├── template.yaml                  ← CloudFormation (Lambda + API Gateway)
+│   ├── src/
+│   │   ├── handler.py                 ← Lambda que sirve el HTML
+│   │   └── static/
+│   │       └── index.html             ← HTML con CSS/JS inline
 │   └── .github/
 │       └── workflows/
 │           └── deploy.yml             ← Pipeline CI/CD frontend
@@ -458,7 +454,7 @@ ftgo-microservicios/
 | Compute | AWS Lambda (Python 3.13) |
 | API | API Gateway (REST) |
 | Base de datos | DynamoDB (una tabla por dominio) |
-| Frontend hosting | S3 + CloudFront |
+| Frontend hosting | Lambda + API Gateway |
 | IaC | AWS SAM / CloudFormation |
 | CI/CD | GitHub Actions |
 | Dependencias | uv (pyproject.toml por servicio) |
@@ -564,7 +560,7 @@ stateDiagram-v2
 
 ```mermaid
 graph TD
-    subgraph "Frontend (S3 + CloudFront)"
+    subgraph "Frontend (Lambda + API Gateway)"
         FE[app.js<br/>Orquestador del cliente]
     end
 
@@ -604,7 +600,7 @@ graph TD
 - Si falla la validación del consumidor al crear un pedido, se retorna error inmediato
 
 ### 11.3 CORS
-- Cada API Gateway configura CORS para permitir el dominio de CloudFront
+- Cada API Gateway configura CORS para permitir llamadas desde el frontend
 - Headers: `Access-Control-Allow-Origin`, `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`
 
 ### 11.4 Evolución a multi-cuenta
@@ -619,7 +615,7 @@ graph TD
 ```mermaid
 sequenceDiagram
     actor Usuario
-    participant FE as Frontend<br/>(S3 + CloudFront)
+    participant FE as Frontend<br/>(Lambda + API Gateway)
     participant APIGW_P as API Gateway<br/>Pedidos
     participant LBD_P as Lambda<br/>Pedidos
     participant APIGW_C as API Gateway<br/>Consumidores
@@ -786,7 +782,7 @@ graph TB
 
     subgraph "DESPUÉS — Microservicios Serverless"
         direction TB
-        CF2[CloudFront + S3]
+        FE2[Lambda + API Gateway<br/>Frontend]
         L1[Lambda Consumidores]
         L2[Lambda Restaurantes]
         L3[Lambda Pedidos]
@@ -812,7 +808,7 @@ graph TB
     style D4 fill:#a9dfbf,stroke:#27ae60
     style D5 fill:#a9dfbf,stroke:#27ae60
     style EC2 fill:#f5b7b1,stroke:#e74c3c
-    style CF2 fill:#f9a825,stroke:#f57f17
+    style FE2 fill:#f9a825,stroke:#f57f17
 ```
 
 | Aspecto | Monolito | Microservicios |
@@ -821,7 +817,7 @@ graph TB
 | Framework | FastAPI | Lambda handlers nativos |
 | Base de datos | SQLite3 (un archivo) | DynamoDB (una tabla por dominio) |
 | API | FastAPI routers | API Gateway REST |
-| Frontend | Servido por FastAPI | S3 + CloudFront |
+| Frontend | Servido por FastAPI | Lambda + API Gateway |
 | Despliegue | scp + systemd | SAM + GitHub Actions |
 | Escalamiento | Vertical (instancia más grande) | Automático (Lambda) |
 | Costo en reposo | ~$25/mes (EC2 siempre encendida) | ~$0 (pay-per-request) |

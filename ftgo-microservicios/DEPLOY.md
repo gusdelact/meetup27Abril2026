@@ -136,19 +136,11 @@ sam deploy --no-confirm-changeset --capabilities CAPABILITY_IAM --resolve-s3
 ```bash
 cd ~/ftgo-microservicios/frontend
 
-# Desplegar infraestructura (S3 + CloudFront)
+# Construir y desplegar (Lambda + API Gateway)
 sam build
 sam deploy --guided
 
-# Subir archivos estáticos
-BUCKET=$(aws cloudformation describe-stacks \
-  --stack-name ftgo-frontend \
-  --query 'Stacks[0].Outputs[?OutputKey==`BucketName`].OutputValue' \
-  --output text)
-
-aws s3 sync static/ s3://$BUCKET/ --delete
-
-echo "Frontend subido al bucket: $BUCKET"
+# La URL del frontend se muestra en los Outputs del stack
 ```
 
 ### Ejecutar la migración de datos
@@ -367,45 +359,19 @@ Esta política otorga los permisos necesarios para desplegar con SAM:
       "Resource": "arn:aws:dynamodb:*:<TU_CUENTA_ID>:table/ftgo-*"
     },
     {
-      "Sid": "S3ArtifactsAndFrontend",
+      "Sid": "S3Artifacts",
       "Effect": "Allow",
       "Action": [
         "s3:CreateBucket",
-        "s3:DeleteBucket",
-        "s3:PutObject",
-        "s3:GetObject",
-        "s3:DeleteObject",
-        "s3:ListBucket",
         "s3:GetBucketLocation",
-        "s3:PutBucketPolicy",
-        "s3:GetBucketPolicy",
-        "s3:PutBucketWebsite",
-        "s3:PutBucketPublicAccessBlock",
-        "s3:GetBucketPublicAccessBlock"
+        "s3:ListBucket",
+        "s3:PutObject",
+        "s3:GetObject"
       ],
       "Resource": [
-        "arn:aws:s3:::ftgo-*",
-        "arn:aws:s3:::ftgo-*/*",
         "arn:aws:s3:::aws-sam-cli-managed-default-*",
         "arn:aws:s3:::aws-sam-cli-managed-default-*/*"
       ]
-    },
-    {
-      "Sid": "CloudFrontManagement",
-      "Effect": "Allow",
-      "Action": [
-        "cloudfront:CreateDistribution",
-        "cloudfront:UpdateDistribution",
-        "cloudfront:DeleteDistribution",
-        "cloudfront:GetDistribution",
-        "cloudfront:CreateInvalidation",
-        "cloudfront:GetInvalidation",
-        "cloudfront:TagResource",
-        "cloudfront:CreateOriginAccessControl",
-        "cloudfront:GetOriginAccessControl",
-        "cloudfront:DeleteOriginAccessControl"
-      ],
-      "Resource": "*"
     },
     {
       "Sid": "IAMRolesForLambda",
@@ -442,7 +408,15 @@ Esta política otorga los permisos necesarios para desplegar con SAM:
         "s3:GetBucketLocation",
         "s3:ListBucket",
         "s3:PutObject",
-        "s3:GetObject"
+        "s3:GetObject",
+        "s3:PutBucketVersioning",
+        "s3:GetBucketVersioning",
+        "s3:PutBucketPolicy",
+        "s3:PutLifecycleConfiguration",
+        "s3:PutBucketTagging",
+        "s3:PutEncryptionConfiguration",
+        "s3:PutBucketPublicAccessBlock",
+        "s3:GetBucketPublicAccessBlock"
       ],
       "Resource": [
         "arn:aws:s3:::aws-sam-cli-managed-default-*",
@@ -609,7 +583,7 @@ jobs:
 
 ```yaml
 # .github/workflows/deploy-frontend.yml
-name: Deploy Frontend (S3 + CloudFront)
+name: Deploy Frontend (Lambda + API Gateway)
 
 on:
   push:
@@ -644,7 +618,11 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Desplegar stack CloudFormation (S3 + CloudFront)
+      - name: SAM Build
+        working-directory: frontend
+        run: sam build
+
+      - name: SAM Deploy
         working-directory: frontend
         run: |
           sam deploy \
@@ -655,31 +633,13 @@ jobs:
             --capabilities CAPABILITY_IAM \
             --resolve-s3
 
-      - name: Obtener nombre del bucket
-        id: get-bucket
+      - name: Obtener URL del frontend
         run: |
-          BUCKET=$(aws cloudformation describe-stacks \
+          URL=$(aws cloudformation describe-stacks \
             --stack-name ${{ env.STACK_NAME }} \
-            --query 'Stacks[0].Outputs[?OutputKey==`BucketName`].OutputValue' \
+            --query 'Stacks[0].Outputs[?OutputKey==`FrontendUrl`].OutputValue' \
             --output text)
-          echo "bucket=$BUCKET" >> $GITHUB_OUTPUT
-
-      - name: Sincronizar archivos estáticos a S3
-        run: |
-          aws s3 sync frontend/static/ s3://${{ steps.get-bucket.outputs.bucket }}/ \
-            --delete \
-            --cache-control "max-age=3600"
-
-      - name: Invalidar caché de CloudFront
-        run: |
-          DIST_ID=$(aws cloudformation describe-stacks \
-            --stack-name ${{ env.STACK_NAME }} \
-            --query 'Stacks[0].Outputs[?OutputKey==`DistributionId`].OutputValue' \
-            --output text)
-          aws cloudfront create-invalidation \
-            --distribution-id $DIST_ID \
-            --paths "/*"
-          echo "🚀 Frontend desplegado. CloudFront invalidation en progreso."
+          echo "🚀 Frontend desplegado en: $URL"
 ```
 
 ---
@@ -708,8 +668,8 @@ sam deploy --guided
 
 # 4. Desplegar el frontend
 cd ../../frontend
+sam build
 sam deploy --guided
-aws s3 sync static/ s3://<NOMBRE_DEL_BUCKET>/ --delete
 ```
 
 > **Nota:** Si las credenciales expiran durante el despliegue, verás
@@ -774,7 +734,7 @@ curl https://<API_REPARTIDORES>/api/repartidores/
 curl https://<API_PAGOS>/api/pagos/
 
 # Verificar el frontend
-curl https://<CLOUDFRONT_DOMAIN>/
+curl https://<FRONTEND_API_URL>/
 ```
 
 ---
@@ -785,7 +745,6 @@ Para eliminar todos los recursos y evitar costos:
 
 ```bash
 # Eliminar en orden inverso
-aws s3 rm s3://<BUCKET_FRONTEND>/ --recursive
 sam delete --stack-name ftgo-frontend --no-prompts
 sam delete --stack-name ftgo-pagos --no-prompts
 sam delete --stack-name ftgo-pedidos --no-prompts
@@ -803,8 +762,7 @@ sam delete --stack-name ftgo-consumidores --no-prompts
 | Lambda | Gratis hasta 1M requests/mes (Free Tier) |
 | API Gateway | Gratis hasta 1M requests/mes (Free Tier, 12 meses) |
 | DynamoDB | Gratis hasta 25 GB + 25 WCU/RCU (Free Tier) |
-| S3 | Gratis hasta 5 GB (Free Tier, 12 meses) |
-| CloudFront | Gratis hasta 1 TB transfer/mes (Free Tier, 12 meses) |
+| S3 (artefactos SAM) | Gratis hasta 5 GB (Free Tier, 12 meses) |
 | **Total (uso educativo)** | **~$0 USD/mes** con Free Tier |
 
 > Para un ejercicio educativo con poco tráfico, el costo es prácticamente

@@ -44,7 +44,8 @@ CORS_HEADERS = {
 def lambda_handler(event, context):
     """Enruta la petición HTTP al handler correspondiente."""
     metodo = event["httpMethod"]
-    ruta = event.get("resource", event.get("path", ""))
+    # Usar path (ruta real) para routing, no resource (template con {id})
+    ruta = event.get("path", event.get("resource", ""))
     ruta_norm = ruta.rstrip("/")
 
     if metodo == "OPTIONS":

@@ -12,7 +12,7 @@ Ejemplo educativo basado en el libro *"Microservice Patterns"* de Chris Richards
 | Un solo proceso FastAPI | 5 funciones Lambda independientes |
 | Una base de datos SQLite | 5 tablas DynamoDB (una por dominio) |
 | Un solo despliegue | Cada servicio se despliega por separado |
-| Frontend servido por FastAPI | Frontend en S3 + CloudFront |
+| Frontend servido por FastAPI | Frontend servido por Lambda + API Gateway |
 | Despliegue manual con scp | Automatizado con GitHub Actions |
 
 ---
@@ -25,13 +25,12 @@ ftgo-microservicios/
 ├── DESIGN.md                    ← Documento de diseño y diagramas
 ├── DEPLOY.md                    ← Guía de despliegue y configuración AWS
 │
-├── frontend/                    ← Frontend (HTML/CSS/JS) hospedado en S3
-│   ├── template.yaml            ← IaC: S3 + CloudFront
-│   ├── static/
-│   │   ├── index.html
-│   │   ├── style.css
-│   │   ├── config.js            ← URLs de cada API Gateway
-│   │   └── app.js
+├── frontend/                    ← Frontend (HTML/CSS/JS) servido por Lambda
+│   ├── template.yaml            ← IaC: Lambda + API Gateway
+│   ├── src/
+│   │   ├── handler.py           ← Lambda que sirve el HTML
+│   │   └── static/
+│   │       └── index.html       ← HTML con CSS/JS inline
 │   └── .github/workflows/
 │       └── deploy.yml
 │
@@ -87,7 +86,7 @@ Para instrucciones detalladas de despliegue, ver [DEPLOY.md](./DEPLOY.md).
 | AWS Lambda | Compute serverless |
 | API Gateway | Exposición de APIs REST |
 | DynamoDB | Base de datos NoSQL por dominio |
-| S3 + CloudFront | Hosting del frontend |
+| Lambda + API Gateway | Hosting del frontend |
 | AWS SAM | Infraestructura como código |
 | GitHub Actions | CI/CD (un pipeline por servicio) |
 | uv | Gestor de dependencias Python |
