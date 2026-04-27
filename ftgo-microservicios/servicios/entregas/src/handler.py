@@ -35,26 +35,28 @@ CORS_HEADERS = {
 def lambda_handler(event, context):
     """Enruta la petición HTTP al handler correspondiente."""
     metodo = event["httpMethod"]
-    ruta = event.get("resource", "")
+    ruta = event.get("resource", event.get("path", ""))
+    ruta_norm = ruta.rstrip("/")
 
     if metodo == "OPTIONS":
         return respuesta(200, {"mensaje": "OK"})
 
     try:
-        if ruta == "/api/repartidores/" and metodo == "GET":
+        if ruta_norm == "/api/repartidores" and metodo == "GET":
             return listar_repartidores()
-        elif ruta == "/api/repartidores/" and metodo == "POST":
+        elif ruta_norm == "/api/repartidores" and metodo == "POST":
             return crear_repartidor(json.loads(event["body"]))
-        elif ruta == "/api/repartidores/{id}" and metodo == "GET":
-            return obtener_repartidor(event["pathParameters"]["id"])
-        elif ruta == "/api/repartidores/{id}" and metodo == "PUT":
-            return actualizar_repartidor(
-                event["pathParameters"]["id"], json.loads(event["body"])
-            )
-        elif ruta == "/api/repartidores/{id}" and metodo == "DELETE":
-            return eliminar_repartidor(event["pathParameters"]["id"])
+        elif "/api/repartidores/" in ruta and metodo == "GET":
+            rep_id = event.get("pathParameters", {}).get("id") or ruta.split("/")[-1]
+            return obtener_repartidor(rep_id)
+        elif "/api/repartidores/" in ruta and metodo == "PUT":
+            rep_id = event.get("pathParameters", {}).get("id") or ruta.split("/")[-1]
+            return actualizar_repartidor(rep_id, json.loads(event["body"]))
+        elif "/api/repartidores/" in ruta and metodo == "DELETE":
+            rep_id = event.get("pathParameters", {}).get("id") or ruta.split("/")[-1]
+            return eliminar_repartidor(rep_id)
         else:
-            return respuesta(404, {"detail": "Ruta no encontrada"})
+            return respuesta(404, {"detail": f"Ruta no encontrada: {metodo} {ruta}"})
 
     except Exception as error:
         print(f"Error: {error}")

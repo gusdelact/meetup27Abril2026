@@ -44,41 +44,41 @@ CORS_HEADERS = {
 def lambda_handler(event, context):
     """Enruta la petición HTTP al handler correspondiente."""
     metodo = event["httpMethod"]
-    ruta = event.get("resource", "")
+    ruta = event.get("resource", event.get("path", ""))
+    ruta_norm = ruta.rstrip("/")
 
     if metodo == "OPTIONS":
         return respuesta(200, {"mensaje": "OK"})
 
     try:
         # --- Rutas de Restaurantes ---
-        if ruta == "/api/restaurantes/" and metodo == "GET":
+        if ruta_norm == "/api/restaurantes" and metodo == "GET":
             return listar_restaurantes()
-        elif ruta == "/api/restaurantes/" and metodo == "POST":
+        elif ruta_norm == "/api/restaurantes" and metodo == "POST":
             return crear_restaurante(json.loads(event["body"]))
-        elif ruta == "/api/restaurantes/{id}" and metodo == "GET":
-            return obtener_restaurante(event["pathParameters"]["id"])
-        elif ruta == "/api/restaurantes/{id}" and metodo == "PUT":
-            return actualizar_restaurante(
-                event["pathParameters"]["id"], json.loads(event["body"])
-            )
-        elif ruta == "/api/restaurantes/{id}" and metodo == "DELETE":
-            return eliminar_restaurante(event["pathParameters"]["id"])
-
-        # --- Rutas del Menú ---
-        elif ruta == "/api/restaurantes/{id}/menu/" and metodo == "POST":
-            return agregar_elemento_menu(
-                event["pathParameters"]["id"], json.loads(event["body"])
-            )
-        elif ruta == "/api/restaurantes/{id}/menu/" and metodo == "GET":
-            return obtener_menu(event["pathParameters"]["id"])
-        elif ruta == "/api/restaurantes/menu/{elemento_id}" and metodo == "PUT":
-            return actualizar_elemento_menu(
-                event["pathParameters"]["elemento_id"], json.loads(event["body"])
-            )
-        elif ruta == "/api/restaurantes/menu/{elemento_id}" and metodo == "DELETE":
-            return eliminar_elemento_menu(event["pathParameters"]["elemento_id"])
+        elif "/api/restaurantes/menu/" in ruta and metodo == "PUT":
+            elemento_id = event.get("pathParameters", {}).get("elemento_id") or ruta.split("/")[-1]
+            return actualizar_elemento_menu(elemento_id, json.loads(event["body"]))
+        elif "/api/restaurantes/menu/" in ruta and metodo == "DELETE":
+            elemento_id = event.get("pathParameters", {}).get("elemento_id") or ruta.split("/")[-1]
+            return eliminar_elemento_menu(elemento_id)
+        elif "/api/restaurantes/" in ruta and "/menu" in ruta and metodo == "POST":
+            rest_id = ruta.split("/api/restaurantes/")[1].split("/")[0]
+            return agregar_elemento_menu(rest_id, json.loads(event["body"]))
+        elif "/api/restaurantes/" in ruta and "/menu" in ruta and metodo == "GET":
+            rest_id = ruta.split("/api/restaurantes/")[1].split("/")[0]
+            return obtener_menu(rest_id)
+        elif "/api/restaurantes/" in ruta and metodo == "GET":
+            rest_id = event.get("pathParameters", {}).get("id") or ruta.split("/api/restaurantes/")[1].split("/")[0]
+            return obtener_restaurante(rest_id)
+        elif "/api/restaurantes/" in ruta and metodo == "PUT":
+            rest_id = event.get("pathParameters", {}).get("id") or ruta.split("/api/restaurantes/")[1].split("/")[0]
+            return actualizar_restaurante(rest_id, json.loads(event["body"]))
+        elif "/api/restaurantes/" in ruta and metodo == "DELETE":
+            rest_id = event.get("pathParameters", {}).get("id") or ruta.split("/api/restaurantes/")[1].split("/")[0]
+            return eliminar_restaurante(rest_id)
         else:
-            return respuesta(404, {"detail": "Ruta no encontrada"})
+            return respuesta(404, {"detail": f"Ruta no encontrada: {metodo} {ruta}"})
 
     except Exception as error:
         print(f"Error: {error}")

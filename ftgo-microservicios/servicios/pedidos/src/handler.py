@@ -63,30 +63,31 @@ TRANSICIONES_VALIDAS = {
 def lambda_handler(event, context):
     """Enruta la petición HTTP al handler correspondiente."""
     metodo = event["httpMethod"]
-    ruta = event.get("resource", "")
+    ruta = event.get("resource", event.get("path", ""))
+    ruta_norm = ruta.rstrip("/")
 
     if metodo == "OPTIONS":
         return respuesta(200, {"mensaje": "OK"})
 
     try:
-        if ruta == "/api/pedidos/" and metodo == "GET":
+        if ruta_norm == "/api/pedidos" and metodo == "GET":
             return listar_pedidos()
-        elif ruta == "/api/pedidos/" and metodo == "POST":
+        elif ruta_norm == "/api/pedidos" and metodo == "POST":
             return crear_pedido(json.loads(event["body"]))
-        elif ruta == "/api/pedidos/{id}" and metodo == "GET":
-            return obtener_pedido(event["pathParameters"]["id"])
-        elif ruta == "/api/pedidos/{id}/estado" and metodo == "PUT":
-            return actualizar_estado(
-                event["pathParameters"]["id"], json.loads(event["body"])
-            )
-        elif ruta == "/api/pedidos/{id}/repartidor" and metodo == "PUT":
-            return asignar_repartidor(
-                event["pathParameters"]["id"], json.loads(event["body"])
-            )
-        elif ruta == "/api/pedidos/{id}" and metodo == "DELETE":
-            return cancelar_pedido(event["pathParameters"]["id"])
+        elif "/api/pedidos/" in ruta and "/estado" in ruta and metodo == "PUT":
+            pedido_id = ruta.split("/api/pedidos/")[1].split("/")[0]
+            return actualizar_estado(pedido_id, json.loads(event["body"]))
+        elif "/api/pedidos/" in ruta and "/repartidor" in ruta and metodo == "PUT":
+            pedido_id = ruta.split("/api/pedidos/")[1].split("/")[0]
+            return asignar_repartidor(pedido_id, json.loads(event["body"]))
+        elif "/api/pedidos/" in ruta and metodo == "GET":
+            pedido_id = event.get("pathParameters", {}).get("id") or ruta.split("/api/pedidos/")[1].split("/")[0]
+            return obtener_pedido(pedido_id)
+        elif "/api/pedidos/" in ruta and metodo == "DELETE":
+            pedido_id = event.get("pathParameters", {}).get("id") or ruta.split("/api/pedidos/")[1].split("/")[0]
+            return cancelar_pedido(pedido_id)
         else:
-            return respuesta(404, {"detail": "Ruta no encontrada"})
+            return respuesta(404, {"detail": f"Ruta no encontrada: {metodo} {ruta}"})
 
     except Exception as error:
         print(f"Error: {error}")
