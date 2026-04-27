@@ -1,79 +1,52 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  FTGO Frontend — Hosting estático con S3 + CloudFront.
-  El frontend (HTML/CSS/JS) se sirve desde un bucket S3
-  y se distribuye globalmente con CloudFront (CDN).
+  FTGO Frontend — Hosting con Lambda + API Gateway.
+  Sirve los archivos estáticos (HTML/CSS/JS) a través de una
+  función Lambda que actúa como servidor web simple.
+  Alternativa a S3+CloudFront cuando no están disponibles.
+
+Globals:
+  Function:
+    Timeout: 10
+    Runtime: python3.13
+    MemorySize: 128
 
 Resources:
 
-  # Bucket S3 donde se almacenan los archivos estáticos
-  FrontendBucket:
-    Type: AWS::S3::Bucket
+  FrontendFunction:
+    Type: AWS::Serverless::Function
     Properties:
-      BucketName: !Sub "ftgo-frontend-${AWS::AccountId}"
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
-
-  # Política que permite a CloudFront leer del bucket
-  FrontendBucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket: !Ref FrontendBucket
-      PolicyDocument:
-        Statement:
-          - Sid: AllowCloudFrontAccess
-            Effect: Allow
-            Principal:
-              Service: cloudfront.amazonaws.com
-            Action: s3:GetObject
-            Resource: !Sub "${FrontendBucket.Arn}/*"
-            Condition:
-              StringEquals:
-                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}"
-
-  # Control de acceso de origen (OAC) — CloudFront accede a S3 de forma segura
-  CloudFrontOAC:
-    Type: AWS::CloudFront::OriginAccessControl
-    Properties:
-      OriginAccessControlConfig:
-        Name: ftgo-frontend-oac
-        OriginAccessControlOriginType: s3
-        SigningBehavior: always
-        SigningProtocol: sigv4
-
-  # Distribución CloudFront (CDN)
-  CloudFrontDistribution:
-    Type: AWS::CloudFront::Distribution
-    Properties:
-      DistributionConfig:
-        Enabled: true
-        DefaultRootObject: index.html
-        Origins:
-          - Id: S3Origin
-            DomainName: !GetAtt FrontendBucket.RegionalDomainName
-            OriginAccessControlId: !Ref CloudFrontOAC
-            S3OriginConfig:
-              OriginAccessIdentity: ""
-        DefaultCacheBehavior:
-          TargetOriginId: S3Origin
-          ViewerProtocolPolicy: redirect-to-https
-          AllowedMethods: [GET, HEAD]
-          CachedMethods: [GET, HEAD]
-          ForwardedValues:
-            QueryString: false
-          Compress: true
+      FunctionName: ftgo-frontend
+      Handler: handler.lambda_handler
+      CodeUri: src/
+      Description: Sirve archivos estáticos del frontend FTGO
+      Events:
+        Root:
+          Type: Api
+          Properties:
+            Path: /
+            Method: GET
+        StaticFile:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: GET
+        OptionsRoot:
+          Type: Api
+          Properties:
+            Path: /
+            Method: OPTIONS
+        OptionsProxy:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: OPTIONS
 
 Outputs:
-  BucketName:
-    Description: Nombre del bucket S3 del frontend
-    Value: !Ref FrontendBucket
-  DistributionId:
-    Description: ID de la distribución CloudFront
-    Value: !Ref CloudFrontDistribution
   FrontendUrl:
-    Description: URL del frontend (CloudFront)
-    Value: !Sub "https://${CloudFrontDistribution.DomainName}"
+    Description: URL del frontend
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+  FunctionArn:
+    Description: ARN de la función Lambda del frontend
+    Value: !GetAtt FrontendFunction.Arn

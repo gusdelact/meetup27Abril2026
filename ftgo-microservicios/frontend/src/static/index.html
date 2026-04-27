@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FTGO - Microservicios Serverless</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>🍔 FTGO - Food To Go Online</h1>
+        <span>MICROSERVICIOS v2.0 (Serverless)</span>
+    </header>
+
+    <nav>
+        <button class="activo" onclick="mostrarSeccion('consumidores')">👤 Consumidores</button>
+        <button onclick="mostrarSeccion('restaurantes')">🏪 Restaurantes</button>
+        <button onclick="mostrarSeccion('menu')">📋 Menú</button>
+        <button onclick="mostrarSeccion('repartidores')">🚴 Repartidores</button>
+        <button onclick="mostrarSeccion('pedidos')">📦 Pedidos</button>
+        <button onclick="mostrarSeccion('pagos')">💳 Pagos</button>
+    </nav>
+
+    <main>
+        <!-- ============ SECCIÓN CONSUMIDORES ============ -->
+        <div id="sec-consumidores" class="seccion visible">
+            <h2>👤 Gestión de Consumidores</h2>
+            <p class="api-badge">🔗 Microservicio: Consumidores API</p>
+            <div id="msg-consumidores"></div>
+            <form id="form-consumidor" onsubmit="crearConsumidor(event)">
+                <label>Nombre:</label>
+                <input type="text" id="cons-nombre" required>
+                <label>Email:</label>
+                <input type="email" id="cons-email" required>
+                <label>Teléfono:</label>
+                <input type="text" id="cons-telefono" required>
+                <label>Dirección:</label>
+                <textarea id="cons-direccion" required></textarea>
+                <button type="submit">Registrar Consumidor</button>
+            </form>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Acciones</th></tr>
+                </thead>
+                <tbody id="tabla-consumidores"></tbody>
+            </table>
+        </div>
+
+        <!-- ============ SECCIÓN RESTAURANTES ============ -->
+        <div id="sec-restaurantes" class="seccion">
+            <h2>🏪 Gestión de Restaurantes</h2>
+            <p class="api-badge">🔗 Microservicio: Restaurantes API</p>
+            <div id="msg-restaurantes"></div>
+            <form id="form-restaurante" onsubmit="crearRestaurante(event)">
+                <label>Nombre:</label>
+                <input type="text" id="rest-nombre" required>
+                <label>Dirección:</label>
+                <textarea id="rest-direccion" required></textarea>
+                <label>Teléfono:</label>
+                <input type="text" id="rest-telefono" required>
+                <label>Tipo de cocina:</label>
+                <input type="text" id="rest-tipo" required placeholder="Ej: Mexicana, Italiana">
+                <label>Horario apertura:</label>
+                <input type="text" id="rest-apertura" value="09:00">
+                <label>Horario cierre:</label>
+                <input type="text" id="rest-cierre" value="22:00">
+                <button type="submit">Registrar Restaurante</button>
+            </form>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Nombre</th><th>Cocina</th><th>Horario</th><th>Acciones</th></tr>
+                </thead>
+                <tbody id="tabla-restaurantes"></tbody>
+            </table>
+        </div>
+
+        <!-- ============ SECCIÓN MENÚ ============ -->
+        <div id="sec-menu" class="seccion">
+            <h2>📋 Gestión de Menú</h2>
+            <p class="api-badge">🔗 Microservicio: Restaurantes API</p>
+            <div id="msg-menu"></div>
+            <form id="form-menu" onsubmit="agregarPlatillo(event)">
+                <label>Restaurante:</label>
+                <select id="menu-restaurante" required></select>
+                <label>Nombre del platillo:</label>
+                <input type="text" id="menu-nombre" required>
+                <label>Descripción:</label>
+                <textarea id="menu-descripcion"></textarea>
+                <label>Precio ($):</label>
+                <input type="number" id="menu-precio" step="0.01" min="0" required>
+                <button type="submit">Agregar Platillo</button>
+            </form>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Restaurante</th><th>Platillo</th><th>Precio</th><th>Disponible</th><th>Acciones</th></tr>
+                </thead>
+                <tbody id="tabla-menu"></tbody>
+            </table>
+        </div>
+
+        <!-- ============ SECCIÓN REPARTIDORES ============ -->
+        <div id="sec-repartidores" class="seccion">
+            <h2>🚴 Gestión de Repartidores</h2>
+            <p class="api-badge">🔗 Microservicio: Entregas API</p>
+            <div id="msg-repartidores"></div>
+            <form id="form-repartidor" onsubmit="crearRepartidor(event)">
+                <label>Nombre:</label>
+                <input type="text" id="rep-nombre" required>
+                <label>Teléfono:</label>
+                <input type="text" id="rep-telefono" required>
+                <label>Vehículo:</label>
+                <select id="rep-vehiculo" required>
+                    <option value="Bicicleta">Bicicleta</option>
+                    <option value="Moto">Moto</option>
+                    <option value="Auto">Auto</option>
+                </select>
+                <button type="submit">Registrar Repartidor</button>
+            </form>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Nombre</th><th>Teléfono</th><th>Vehículo</th><th>Disponible</th><th>Acciones</th></tr>
+                </thead>
+                <tbody id="tabla-repartidores"></tbody>
+            </table>
+        </div>
+
+        <!-- ============ SECCIÓN PEDIDOS ============ -->
+        <div id="sec-pedidos" class="seccion">
+            <h2>📦 Gestión de Pedidos</h2>
+            <p class="api-badge">🔗 Microservicio: Pedidos API (orquesta Consumidores + Restaurantes + Entregas)</p>
+            <div id="msg-pedidos"></div>
+            <form id="form-pedido" onsubmit="crearPedido(event)">
+                <label>Consumidor:</label>
+                <select id="ped-consumidor" required></select>
+                <label>Restaurante:</label>
+                <select id="ped-restaurante" required onchange="cargarMenuPedido()"></select>
+                <label>Dirección de entrega:</label>
+                <textarea id="ped-direccion" required></textarea>
+                <label>Platillos:</label>
+                <div id="ped-platillos" class="elementos-pedido">
+                    <p><em>Seleccione un restaurante para ver los platillos</em></p>
+                </div>
+                <button type="submit">Crear Pedido</button>
+            </form>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Consumidor</th><th>Restaurante</th><th>Estado</th><th>Total</th><th>Acciones</th></tr>
+                </thead>
+                <tbody id="tabla-pedidos"></tbody>
+            </table>
+        </div>
+
+        <!-- ============ SECCIÓN PAGOS ============ -->
+        <div id="sec-pagos" class="seccion">
+            <h2>💳 Gestión de Pagos</h2>
+            <p class="api-badge">🔗 Microservicio: Pagos API (consulta Pedidos API)</p>
+            <div id="msg-pagos"></div>
+            <form id="form-pago" onsubmit="procesarPago(event)">
+                <label>Pedido:</label>
+                <select id="pago-pedido" required></select>
+                <label>Método de pago:</label>
+                <select id="pago-metodo" required>
+                    <option value="tarjeta">Tarjeta de crédito</option>
+                    <option value="efectivo">Efectivo</option>
+                </select>
+                <button type="submit">Procesar Pago</button>
+            </form>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Pedido</th><th>Monto</th><th>Método</th><th>Estado</th><th>Referencia</th></tr>
+                </thead>
+                <tbody id="tabla-pagos"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Cargar configuración de URLs y luego la aplicación -->
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
