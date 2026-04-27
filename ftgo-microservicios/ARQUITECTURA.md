@@ -1427,67 +1427,282 @@ Después del primer despliegue, cada servicio se puede actualizar independientem
 
 ## 13. Migración de Datos — SQLite a DynamoDB
 
-### 13.1 El Script de Migración
+### 13.1 Dos Scripts de Migración
 
-El script `migrar_sqlite_a_dynamodb.py` lee los datos del monolito y los inserta en las tablas DynamoDB de cada microservicio.
+El proyecto incluye dos scripts de migración con propósitos diferentes:
 
-### 13.2 Desafíos de la Migración
+| Script | Propósito | Uso |
+|--------|-----------|-----|
+| `migrar_sqlite_a_dynamodb.py` | Migra TODO de una vez (un solo operador) | Desarrollo, testing |
+| `migrar_por_dominio.py` | Migra UN dominio a la vez (trabajo en equipo) | Meetup, células paralelas |
 
-| Desafío | Solución |
-|---------|----------|
-| IDs cambian de `int` a `UUID string` | Mantener un mapeo `{id_viejo: uuid_nuevo}` |
-| Foreign keys desaparecen | Usar el mapeo para traducir referencias |
-| `float` → `Decimal` | `Decimal(str(valor))` para precisión exacta |
-| `datetime` → `string` | Formato ISO 8601 |
-| Single-table design | Construir PK/SK compuestos (`REST#uuid`, `MENU#uuid`) |
-| Orden de migración | Respetar dependencias (consumidores antes que pedidos) |
+El script `migrar_por_dominio.py` está diseñado para el meetup donde cada célula de trabajo migra su propio dominio de forma independiente y comparte archivos JSON de mapeo con las células que dependen de ella.
 
-### 13.3 Flujo de Migración
+### 13.2 El Problema: IDs Incompatibles
+
+El desafío central de la migración es que los IDs cambian de formato:
+
+```
+SQLite (monolito):    id = 1, 2, 3, 4, 5 ...        (int auto-increment)
+DynamoDB (microserv): id = "a1b2c3d4-e5f6-..."       (UUID v4 string)
+```
+
+Cuando un pedido en SQLite tiene `consumidor_id = 3`, necesitamos saber cuál es el UUID que se le asignó al consumidor 3 en DynamoDB. Sin esa información, las referencias se pierden.
+
+**Solución: Archivos JSON de mapeo.**
+
+### 13.3 Archivos JSON de Mapeo
+
+Cada dominio sin dependencias genera un archivo JSON que mapea IDs viejos (int) a UUIDs nuevos:
+
+**`mapeo_consumidores.json`** (generado por la Célula 2):
+```json
+{
+  "1": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "2": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+  "3": "c3d4e5f6-a7b8-9012-cdef-123456789012"
+}
+```
+
+**`mapeo_restaurantes.json`** (generado por la Célula 3):
+```json
+{
+  "1": "d4e5f6a7-b8c9-0123-defa-234567890123",
+  "2": "e5f6a7b8-c9d0-1234-efab-345678901234"
+}
+```
+
+**`mapeo_menu.json`** (generado por la Célula 3):
+```json
+{
+  "1": "f6a7b8c9-d0e1-2345-fabc-456789012345",
+  "2": "a7b8c9d0-e1f2-3456-abcd-567890123456",
+  "3": "b8c9d0e1-f2a3-4567-bcde-678901234567"
+}
+```
+
+**`mapeo_repartidores.json`** (generado por la Célula 4):
+```json
+{
+  "1": "c9d0e1f2-a3b4-5678-cdef-789012345678",
+  "2": "d0e1f2a3-b4c5-6789-defa-890123456789"
+}
+```
+
+**`mapeo_pedidos.json`** (generado por la Célula 5):
+```json
+{
+  "1": "e1f2a3b4-c5d6-7890-efab-901234567890",
+  "2": "f2a3b4c5-d6e7-8901-fabc-012345678901"
+}
+```
+
+### 13.4 Flujo de Mapeos entre Células
 
 ```mermaid
 graph TD
-    A[(SQLite3<br/>ftgo.db)] -->|Lee| B[Script Python]
+    A[(SQLite3<br/>ftgo.db)] -->|Lee| C2[Célula 2<br/>migrar_por_dominio.py consumidores]
+    A -->|Lee| C3[Célula 3<br/>migrar_por_dominio.py restaurantes]
+    A -->|Lee| C4[Célula 4<br/>migrar_por_dominio.py entregas]
 
-    B -->|1. Migra| C[Consumidores<br/>int→UUID]
-    B -->|2. Migra| D[Restaurantes + Menú<br/>→ PK/SK]
-    B -->|3. Migra| E[Repartidores<br/>int→UUID]
-    B -->|4. Migra con mapeo| F[Pedidos + Elementos<br/>→ PK/SK + refs UUID]
-    B -->|5. Migra con mapeo| G[Pagos<br/>→ ref pedido UUID]
+    C2 -->|Escribe| DDB1[(DynamoDB<br/>ftgo-consumidores)]
+    C3 -->|Escribe| DDB2[(DynamoDB<br/>ftgo-restaurantes)]
+    C4 -->|Escribe| DDB3[(DynamoDB<br/>ftgo-repartidores)]
 
-    C --> H[(DynamoDB<br/>ftgo-consumidores)]
-    D --> I[(DynamoDB<br/>ftgo-restaurantes)]
-    E --> J[(DynamoDB<br/>ftgo-repartidores)]
-    F --> K[(DynamoDB<br/>ftgo-pedidos)]
-    G --> L[(DynamoDB<br/>ftgo-pagos)]
+    C2 -->|Genera| J1[mapeo_consumidores.json]
+    C3 -->|Genera| J2[mapeo_restaurantes.json]
+    C3 -->|Genera| J3[mapeo_menu.json]
+    C4 -->|Genera| J4[mapeo_repartidores.json]
+
+    J1 -->|Input| C5[Célula 5<br/>migrar_por_dominio.py pedidos]
+    J2 -->|Input| C5
+    J3 -->|Input| C5
+    J4 -->|Input| C5
+
+    A -->|Lee| C5
+    C5 -->|Escribe| DDB4[(DynamoDB<br/>ftgo-pedidos)]
+    C5 -->|Genera| J5[mapeo_pedidos.json]
+
+    J5 -->|Input| C6[Célula 6<br/>migrar_por_dominio.py pagos]
+    A -->|Lee| C6
+    C6 -->|Escribe| DDB5[(DynamoDB<br/>ftgo-pagos)]
 
     style A fill:#f9e79f,stroke:#f39c12
-    style H fill:#a9dfbf,stroke:#27ae60
-    style I fill:#a9dfbf,stroke:#27ae60
-    style J fill:#a9dfbf,stroke:#27ae60
-    style K fill:#a9dfbf,stroke:#27ae60
-    style L fill:#a9dfbf,stroke:#27ae60
+    style DDB1 fill:#a9dfbf,stroke:#27ae60
+    style DDB2 fill:#a9dfbf,stroke:#27ae60
+    style DDB3 fill:#a9dfbf,stroke:#27ae60
+    style DDB4 fill:#a9dfbf,stroke:#27ae60
+    style DDB5 fill:#a9dfbf,stroke:#27ae60
+    style J1 fill:#aed6f1,stroke:#2980b9
+    style J2 fill:#aed6f1,stroke:#2980b9
+    style J3 fill:#aed6f1,stroke:#2980b9
+    style J4 fill:#aed6f1,stroke:#2980b9
+    style J5 fill:#aed6f1,stroke:#2980b9
 ```
 
-### 13.4 Ejemplo de Transformación
+### 13.5 Uso del Script `migrar_por_dominio.py`
 
-**Antes (SQLite — relacional):**
+```bash
+cd ftgo-microservicios/scripts
+pip install boto3
+
+# ─── Fase 1: Dominios sin dependencias (en paralelo) ───
+
+# Célula 2 ejecuta:
+python migrar_por_dominio.py consumidores
+# → Genera: mapeo_consumidores.json
+
+# Célula 3 ejecuta:
+python migrar_por_dominio.py restaurantes
+# → Genera: mapeo_restaurantes.json + mapeo_menu.json
+
+# Célula 4 ejecuta:
+python migrar_por_dominio.py entregas
+# → Genera: mapeo_repartidores.json
+
+# ─── Fase 2: Pedidos (necesita mapeos de fase 1) ───
+
+# Célula 5 ejecuta (después de recibir los 4 archivos JSON):
+python migrar_por_dominio.py pedidos \
+  --mapeo-consumidores mapeo_consumidores.json \
+  --mapeo-restaurantes mapeo_restaurantes.json \
+  --mapeo-menu mapeo_menu.json \
+  --mapeo-repartidores mapeo_repartidores.json
+# → Genera: mapeo_pedidos.json
+
+# ─── Fase 3: Pagos (necesita mapeo de pedidos) ───
+
+# Célula 6 ejecuta (después de recibir mapeo_pedidos.json):
+python migrar_por_dominio.py pagos \
+  --mapeo-pedidos mapeo_pedidos.json
+```
+
+### 13.6 Desafíos de la Migración y Soluciones
+
+| Desafío | Problema | Solución |
+|---------|----------|----------|
+| IDs incompatibles | SQLite usa `int`, DynamoDB usa `string` | Generar UUID v4 y guardar mapeo en JSON |
+| Foreign keys desaparecen | DynamoDB no tiene FK ni JOINs | Traducir FK usando archivos de mapeo JSON |
+| `float` → `Decimal` | DynamoDB no acepta `float` | `Decimal(str(valor))` para precisión exacta |
+| `datetime` → `string` | DynamoDB no tiene tipo datetime | Formato ISO 8601 como string |
+| Single-table design | Restaurantes + menú en misma tabla | Construir PK/SK compuestos (`REST#uuid`, `MENU#uuid`) |
+| Orden de migración | Pedidos depende de consumidores, restaurantes, repartidores | Migrar en fases respetando dependencias |
+| Trabajo en equipo | Cada célula migra su dominio por separado | Archivos JSON compartidos entre células |
+
+### 13.7 Ejemplo Completo de Transformación
+
+**Antes (SQLite — relacional con int IDs y foreign keys):**
 ```sql
--- Tabla consumidores
-INSERT INTO consumidores (id, nombre, email) VALUES (1, 'Juan', 'juan@mail.com');
+-- Consumidor con id=3
+INSERT INTO consumidores (id, nombre, email, telefono, direccion)
+VALUES (3, 'María López', 'maria@mail.com', '555-1234', 'Av. Reforma 100');
 
--- Tabla pedidos (foreign key a consumidores)
-INSERT INTO pedidos (id, consumidor_id, total) VALUES (1, 1, 250.00);
+-- Restaurante con id=2
+INSERT INTO restaurantes (id, nombre, tipo_cocina)
+VALUES (2, 'Tacos El Paisa', 'Mexicana');
+
+-- Platillo con id=5, referencia a restaurante 2
+INSERT INTO elementos_menu (id, restaurante_id, nombre, precio)
+VALUES (5, 2, 'Tacos al pastor', 85.50);
+
+-- Pedido con id=1, referencias a consumidor 3 y restaurante 2
+INSERT INTO pedidos (id, consumidor_id, restaurante_id, estado, total)
+VALUES (1, 3, 2, 'ENTREGADO', 171.00);
+
+-- Elemento del pedido, referencia a pedido 1 y platillo 5
+INSERT INTO elementos_pedido (id, pedido_id, elemento_menu_id, cantidad, precio_unitario, subtotal)
+VALUES (1, 1, 5, 2, 85.50, 171.00);
 ```
 
-**Después (DynamoDB — NoSQL):**
-```python
-# Tabla ftgo-consumidores
-{"id": "a1b2c3d4-...", "nombre": "Juan", "email": "juan@mail.com"}
+**Después (DynamoDB — NoSQL con UUIDs y referencias lógicas):**
 
-# Tabla ftgo-pedidos (referencia lógica por UUID)
-{"PK": "PED#e5f6g7h8-...", "SK": "METADATA",
- "consumidor_id": "a1b2c3d4-...",  # ← UUID del consumidor (no int)
- "total": Decimal("250.00")}
+Tabla `ftgo-consumidores`:
+```json
+{
+  "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+  "nombre": "María López",
+  "email": "maria@mail.com",
+  "telefono": "555-1234",
+  "direccion": "Av. Reforma 100",
+  "fecha_registro": "2026-04-27T10:00:00"
+}
+```
+
+Tabla `ftgo-restaurantes` (item del restaurante):
+```json
+{
+  "PK": "REST#e5f6a7b8-c9d0-1234-efab-345678901234",
+  "SK": "METADATA",
+  "tipo_entidad": "restaurante",
+  "id": "e5f6a7b8-c9d0-1234-efab-345678901234",
+  "nombre": "Tacos El Paisa",
+  "tipo_cocina": "Mexicana"
+}
+```
+
+Tabla `ftgo-restaurantes` (item del platillo — misma tabla, diferente SK):
+```json
+{
+  "PK": "REST#e5f6a7b8-c9d0-1234-efab-345678901234",
+  "SK": "MENU#f6a7b8c9-d0e1-2345-fabc-456789012345",
+  "tipo_entidad": "elemento_menu",
+  "id": "f6a7b8c9-d0e1-2345-fabc-456789012345",
+  "restaurante_id": "e5f6a7b8-c9d0-1234-efab-345678901234",
+  "nombre": "Tacos al pastor",
+  "precio": 85.50
+}
+```
+
+Tabla `ftgo-pedidos` (item del pedido):
+```json
+{
+  "PK": "PED#e1f2a3b4-c5d6-7890-efab-901234567890",
+  "SK": "METADATA",
+  "tipo_entidad": "pedido",
+  "id": "e1f2a3b4-c5d6-7890-efab-901234567890",
+  "consumidor_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+  "restaurante_id": "e5f6a7b8-c9d0-1234-efab-345678901234",
+  "estado": "ENTREGADO",
+  "total": 171.00
+}
+```
+
+Tabla `ftgo-pedidos` (item del elemento — misma tabla, diferente SK):
+```json
+{
+  "PK": "PED#e1f2a3b4-c5d6-7890-efab-901234567890",
+  "SK": "ELEM#a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "tipo_entidad": "elemento_pedido",
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "pedido_id": "e1f2a3b4-c5d6-7890-efab-901234567890",
+  "elemento_menu_id": "f6a7b8c9-d0e1-2345-fabc-456789012345",
+  "cantidad": 2,
+  "precio_unitario": 85.50,
+  "subtotal": 171.00
+}
+```
+
+**Archivos de mapeo generados (los JSON que se comparten entre células):**
+
+`mapeo_consumidores.json` — permite traducir `consumidor_id=3` → UUID:
+```json
+{
+  "3": "c3d4e5f6-a7b8-9012-cdef-123456789012"
+}
+```
+
+`mapeo_restaurantes.json` — permite traducir `restaurante_id=2` → UUID:
+```json
+{
+  "2": "e5f6a7b8-c9d0-1234-efab-345678901234"
+}
+```
+
+`mapeo_menu.json` — permite traducir `elemento_menu_id=5` → UUID:
+```json
+{
+  "5": "f6a7b8c9-d0e1-2345-fabc-456789012345"
+}
 ```
 
 ---

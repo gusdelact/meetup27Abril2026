@@ -97,7 +97,7 @@ FTGO corriendo como microservicios serverless en AWS.
 | Componente | `servicios/consumidores/` |
 | Stack CloudFormation | `ftgo-consumidores` |
 | Tabla DynamoDB | `ftgo-consumidores` (PK: `id`, GSI: `email-index`) |
-| Responsabilidad | Desplegar Lambda + API Gateway + DynamoDB y migrar datos |
+| Responsabilidad | Desplegar Lambda + API Gateway + DynamoDB |
 | Dependencias | Ninguna (dominio independiente) |
 | Orden de despliegue | Puede desplegarse de inmediato (sin dependencias) |
 
@@ -115,25 +115,30 @@ FTGO corriendo como microservicios serverless en AWS.
    ```
 4. Anotar la URL del API Gateway (aparece en los Outputs del stack).
 5. Comunicar la URL a la Célula 1 (Frontend) y Célula 5 (Pedidos).
-6. Migrar datos del monolito:
-   ```bash
-   cd ../../scripts
-   pip install boto3
-   python migrar_por_dominio.py consumidores
-   ```
-7. Compartir el archivo `mapeo_consumidores.json` con la Célula 5 (Pedidos).
-8. Verificar con curl:
+6. Verificar con curl:
    ```bash
    curl https://<TU_API_URL>/Prod/api/consumidores/
    ```
+
+##### 🔹 Opcional — Migrar datos del monolito
+
+> Si el equipo termina antes de tiempo, puede migrar los datos existentes del monolito.
+> El archivo `ftgo.db` será proporcionado por el instructor (ya disponible en la EC2).
+
+```bash
+cd ../../scripts
+pip install boto3
+python migrar_por_dominio.py consumidores
+```
+Esto genera `mapeo_consumidores.json` — compartirlo con la Célula 5 (Pedidos) si también hace migración.
 
 #### Checklist de la Célula 2
 
 - [ ] `sam deploy` exitoso
 - [ ] URL del API Gateway anotada y compartida con Célula 1 y Célula 5
-- [ ] Datos migrados con `migrar_por_dominio.py consumidores`
-- [ ] Archivo `mapeo_consumidores.json` compartido con Célula 5
-- [ ] Verificación: `curl` devuelve lista de consumidores
+- [ ] Verificación: `curl` devuelve respuesta (lista vacía `[]` o datos migrados)
+- [ ] *(Opcional)* Datos migrados con `migrar_por_dominio.py consumidores`
+- [ ] *(Opcional)* Archivo `mapeo_consumidores.json` compartido con Célula 5
 
 ---
 
@@ -144,7 +149,7 @@ FTGO corriendo como microservicios serverless en AWS.
 | Componente | `servicios/restaurantes/` |
 | Stack CloudFormation | `ftgo-restaurantes` |
 | Tabla DynamoDB | `ftgo-restaurantes` (PK: `PK`, SK: `SK` — single-table design) |
-| Responsabilidad | Desplegar Lambda + API Gateway + DynamoDB y migrar restaurantes + menús |
+| Responsabilidad | Desplegar Lambda + API Gateway + DynamoDB |
 | Dependencias | Ninguna (dominio independiente) |
 | Orden de despliegue | Puede desplegarse de inmediato (sin dependencias) |
 
@@ -161,24 +166,29 @@ FTGO corriendo como microservicios serverless en AWS.
    ```
 4. Anotar la URL del API Gateway.
 5. Comunicar la URL a la Célula 1 (Frontend) y Célula 5 (Pedidos).
-6. Migrar datos:
-   ```bash
-   cd ../../scripts
-   python migrar_por_dominio.py restaurantes
-   ```
-7. Compartir `mapeo_restaurantes.json` y `mapeo_menu.json` con la Célula 5.
-8. Verificar:
+6. Verificar:
    ```bash
    curl https://<TU_API_URL>/Prod/api/restaurantes/
    ```
+
+##### 🔹 Opcional — Migrar datos del monolito
+
+> Si el equipo termina antes de tiempo, puede migrar los datos existentes del monolito.
+> El archivo `ftgo.db` será proporcionado por el instructor (ya disponible en la EC2).
+
+```bash
+cd ../../scripts
+python migrar_por_dominio.py restaurantes
+```
+Esto genera `mapeo_restaurantes.json` y `mapeo_menu.json` — compartirlos con la Célula 5 si también hace migración.
 
 #### Checklist de la Célula 3
 
 - [ ] `sam deploy` exitoso
 - [ ] URL del API Gateway compartida con Célula 1 y Célula 5
-- [ ] Datos migrados (restaurantes + menús)
-- [ ] Archivos `mapeo_restaurantes.json` y `mapeo_menu.json` compartidos con Célula 5
-- [ ] Verificación: `curl` devuelve lista de restaurantes
+- [ ] Verificación: `curl` devuelve respuesta (lista vacía `[]` o datos migrados)
+- [ ] *(Opcional)* Datos migrados (restaurantes + menús)
+- [ ] *(Opcional)* Archivos `mapeo_restaurantes.json` y `mapeo_menu.json` compartidos con Célula 5
 
 ---
 
@@ -189,7 +199,7 @@ FTGO corriendo como microservicios serverless en AWS.
 | Componente | `servicios/entregas/` |
 | Stack CloudFormation | `ftgo-repartidores` |
 | Tabla DynamoDB | `ftgo-repartidores` (PK: `id`) |
-| Responsabilidad | Desplegar Lambda + API Gateway + DynamoDB y migrar repartidores |
+| Responsabilidad | Desplegar Lambda + API Gateway + DynamoDB |
 | Dependencias | Ninguna (dominio independiente) |
 | Orden de despliegue | Puede desplegarse de inmediato (sin dependencias) |
 
@@ -206,24 +216,29 @@ FTGO corriendo como microservicios serverless en AWS.
    ```
 4. Anotar la URL del API Gateway.
 5. Comunicar la URL a la Célula 1 (Frontend) y Célula 5 (Pedidos).
-6. Migrar datos:
-   ```bash
-   cd ../../scripts
-   python migrar_por_dominio.py entregas
-   ```
-7. Compartir `mapeo_repartidores.json` con la Célula 5.
-8. Verificar:
+6. Verificar:
    ```bash
    curl https://<TU_API_URL>/Prod/api/repartidores/
    ```
+
+##### 🔹 Opcional — Migrar datos del monolito
+
+> Si el equipo termina antes de tiempo, puede migrar los datos existentes del monolito.
+> El archivo `ftgo.db` será proporcionado por el instructor (ya disponible en la EC2).
+
+```bash
+cd ../../scripts
+python migrar_por_dominio.py entregas
+```
+Esto genera `mapeo_repartidores.json` — compartirlo con la Célula 5 si también hace migración.
 
 #### Checklist de la Célula 4
 
 - [ ] `sam deploy` exitoso
 - [ ] URL del API Gateway compartida con Célula 1 y Célula 5
-- [ ] Datos migrados
-- [ ] Archivo `mapeo_repartidores.json` compartido con Célula 5
-- [ ] Verificación: `curl` devuelve lista de repartidores
+- [ ] Verificación: `curl` devuelve respuesta (lista vacía `[]` o datos migrados)
+- [ ] *(Opcional)* Datos migrados
+- [ ] *(Opcional)* Archivo `mapeo_repartidores.json` compartido con Célula 5
 
 ---
 
@@ -234,7 +249,7 @@ FTGO corriendo como microservicios serverless en AWS.
 | Componente | `servicios/pedidos/` |
 | Stack CloudFormation | `ftgo-pedidos` |
 | Tabla DynamoDB | `ftgo-pedidos` (PK: `PK`, SK: `SK`, GSI: `consumidor-index`) |
-| Responsabilidad | Desplegar Lambda + API Gateway + DynamoDB, configurar URLs de otros servicios, migrar datos |
+| Responsabilidad | Desplegar Lambda + API Gateway + DynamoDB, configurar URLs de otros servicios |
 | Dependencias | Necesita las URLs de Consumidores (Célula 2), Restaurantes (Célula 3) y Entregas (Célula 4) |
 | Orden de despliegue | DESPUÉS de las células 2, 3 y 4 |
 
@@ -264,12 +279,22 @@ FTGO corriendo como microservicios serverless en AWS.
    ```
 5. Anotar la URL del API Gateway.
 6. Comunicar la URL a la Célula 1 (Frontend) y Célula 6 (Pagos).
-7. Recopilar los archivos de mapeo de las células 2, 3 y 4:
+7. Verificar:
+    ```bash
+    curl https://<TU_API_URL>/Prod/api/pedidos/
+    ```
+
+##### 🔹 Opcional — Migrar datos del monolito
+
+> Si el equipo termina antes de tiempo y las células 2, 3 y 4 también hicieron migración.
+> El archivo `ftgo.db` será proporcionado por el instructor (ya disponible en la EC2).
+
+1. Recopilar los archivos de mapeo de las células 2, 3 y 4:
    - `mapeo_consumidores.json` (de Célula 2)
    - `mapeo_restaurantes.json` (de Célula 3)
    - `mapeo_menu.json` (de Célula 3)
    - `mapeo_repartidores.json` (de Célula 4)
-8. Migrar datos:
+2. Migrar datos:
    ```bash
    cd ../../scripts
    python migrar_por_dominio.py pedidos \
@@ -278,21 +303,17 @@ FTGO corriendo como microservicios serverless en AWS.
      --mapeo-menu mapeo_menu.json \
      --mapeo-repartidores mapeo_repartidores.json
    ```
-9. Compartir `mapeo_pedidos.json` con la Célula 6.
-10. Verificar:
-    ```bash
-    curl https://<TU_API_URL>/Prod/api/pedidos/
-    ```
+3. Compartir `mapeo_pedidos.json` con la Célula 6.
 
 #### Checklist de la Célula 5
 
 - [ ] URLs de Consumidores, Restaurantes y Entregas recibidas
 - [ ] `sam deploy` exitoso con parámetros de URLs
 - [ ] URL del API Gateway compartida con Célula 1 y Célula 6
-- [ ] Archivos de mapeo recibidos de células 2, 3 y 4
-- [ ] Datos migrados con `migrar_por_dominio.py pedidos`
-- [ ] Archivo `mapeo_pedidos.json` compartido con Célula 6
-- [ ] Verificación: `curl` devuelve lista de pedidos
+- [ ] Verificación: `curl` devuelve respuesta (lista vacía `[]` o datos migrados)
+- [ ] *(Opcional)* Archivos de mapeo recibidos de células 2, 3 y 4
+- [ ] *(Opcional)* Datos migrados con `migrar_por_dominio.py pedidos`
+- [ ] *(Opcional)* Archivo `mapeo_pedidos.json` compartido con Célula 6
 
 ---
 
@@ -303,7 +324,7 @@ FTGO corriendo como microservicios serverless en AWS.
 | Componente | `servicios/pagos/` |
 | Stack CloudFormation | `ftgo-pagos` |
 | Tabla DynamoDB | `ftgo-pagos` (PK: `id`, GSI: `pedido-index`) |
-| Responsabilidad | Desplegar Lambda + API Gateway + DynamoDB, configurar URL de Pedidos, migrar datos |
+| Responsabilidad | Desplegar Lambda + API Gateway + DynamoDB, configurar URL de Pedidos |
 | Dependencias | Necesita la URL de Pedidos (Célula 5) |
 | Orden de despliegue | DESPUÉS de la Célula 5 |
 
@@ -328,16 +349,22 @@ FTGO corriendo como microservicios serverless en AWS.
 
 5. Anotar la URL del API Gateway.
 6. Comunicar la URL a la Célula 1 (Frontend).
-7. Recopilar `mapeo_pedidos.json` de la Célula 5.
-8. Migrar datos:
+7. Verificar:
+   ```bash
+   curl https://<TU_API_URL>/Prod/api/pagos/
+   ```
+
+##### 🔹 Opcional — Migrar datos del monolito
+
+> Si el equipo termina antes de tiempo y la Célula 5 también hizo migración.
+> El archivo `ftgo.db` será proporcionado por el instructor (ya disponible en la EC2).
+
+1. Recopilar `mapeo_pedidos.json` de la Célula 5.
+2. Migrar datos:
    ```bash
    cd ../../scripts
    python migrar_por_dominio.py pagos \
      --mapeo-pedidos mapeo_pedidos.json
-   ```
-9. Verificar:
-   ```bash
-   curl https://<TU_API_URL>/Prod/api/pagos/
    ```
 
 #### Checklist de la Célula 6
@@ -345,8 +372,8 @@ FTGO corriendo como microservicios serverless en AWS.
 - [ ] URL de Pedidos recibida de Célula 5
 - [ ] `sam deploy` exitoso con parámetro de URL
 - [ ] URL del API Gateway compartida con Célula 1
-- [ ] Datos migrados con `migrar_por_dominio.py pagos`
-- [ ] Verificación: `curl` devuelve lista de pagos
+- [ ] Verificación: `curl` devuelve respuesta (lista vacía `[]` o datos migrados)
+- [ ] *(Opcional)* Datos migrados con `migrar_por_dominio.py pagos`
 
 ---
 
@@ -388,21 +415,71 @@ graph LR
 
 ---
 
-## Cronograma Sugerido
+## Cronograma y Hitos
 
-| Tiempo | Actividad |
-|--------|-----------|
-| 0:00 - 0:15 | Presentación del ejercicio, formación de equipos y asignación de células |
-| 0:15 - 0:25 | Cada célula se conecta a la EC2, configura credenciales AWS y clona el repo |
-| 0:25 - 0:55 | **Fase 1:** Células 2, 3 y 4 despliegan sus microservicios en paralelo |
-| 0:55 - 1:10 | **Fase 1 (cont.):** Células 2, 3 y 4 ejecutan migración de datos y comparten URLs + mapeos |
-| 1:10 - 1:30 | **Fase 2:** Célula 5 despliega Pedidos con las URLs de los otros servicios y migra datos |
-| 1:30 - 1:45 | **Fase 3:** Célula 6 despliega Pagos con la URL de Pedidos y migra datos |
-| 1:45 - 2:00 | **Fase 4:** Célula 1 actualiza las URLs en el frontend, despliega y verifica |
-| 2:00 - 2:15 | Verificación completa: cada equipo navega su frontend y prueba el flujo completo |
-| 2:15 - 2:30 | Retrospectiva: comparar experiencias entre equipos, discutir problemas encontrados |
+### 🏁 Hito 1 — Despliegue Individual
 
-> **Tiempo total estimado: 2 horas 30 minutos**
+> **Cada célula despliega su microservicio o frontend de forma independiente y valida que funciona con su script de pruebas.**
+
+Este hito se alcanza cuando cada célula puede demostrar que su servicio responde correctamente a peticiones HTTP (curl o script de test). No requiere integración con otros servicios.
+
+### 🏁 Hito 2 — Integración Completa
+
+> **Todos los microservicios se conectan entre sí y el frontend orquesta el flujo completo de negocio (crear pedido → cambiar estados → pagar).**
+
+Este hito se alcanza cuando el equipo navega el frontend y ejecuta un flujo de negocio de principio a fin sin errores.
+
+---
+
+### Cronograma Detallado
+
+| Tiempo | Fase | Actividad | Hito |
+|--------|------|-----------|------|
+| 0:00 - 0:15 | Inicio | Presentación del ejercicio, formación de equipos y asignación de células | — |
+| 0:15 - 0:25 | Inicio | Cada célula se conecta a la EC2, configura credenciales AWS y clona el repo | — |
+| 0:25 - 0:55 | Despliegue | **Células 2, 3 y 4** despliegan sus microservicios en paralelo | — |
+| 0:55 - 1:05 | Validación | **Células 2, 3 y 4** ejecutan sus scripts de prueba y comparten URLs | **🏁 Hito 1** (células 2, 3, 4) |
+| 1:05 - 1:25 | Despliegue | **Célula 5** despliega Pedidos con las URLs de los otros servicios | — |
+| 1:25 - 1:35 | Validación | **Célula 5** ejecuta `test_pedidos.sh` y comparte URL | **🏁 Hito 1** (célula 5) |
+| 1:35 - 1:50 | Despliegue | **Célula 6** despliega Pagos con la URL de Pedidos | — |
+| 1:50 - 1:55 | Validación | **Célula 6** ejecuta `test_pagos.sh` y comparte URL | **🏁 Hito 1** (célula 6) |
+| 1:55 - 2:10 | Integración | **Célula 1** actualiza URLs en el frontend, despliega y verifica | **🏁 Hito 1** (célula 1) |
+| 2:10 - 2:30 | Integración | Verificación completa: flujo de negocio de principio a fin en el frontend | **🏁 Hito 2** |
+| 2:30 - 2:45 | *(Opcional)* | Migración de datos del monolito a DynamoDB | — |
+| 2:45 - 3:00 | Cierre | Retrospectiva: comparar experiencias entre equipos, discutir problemas | — |
+
+> **Tiempo total estimado: 3 horas** (2h obligatorias + 1h opcional/buffer)
+
+---
+
+### Criterios de éxito por hito
+
+#### 🏁 Hito 1 — Despliegue Individual (por célula)
+
+| Célula | Criterio de éxito |
+|--------|-------------------|
+| 2 - Consumidores | `test_consumidores.sh` pasa todos los tests |
+| 3 - Restaurantes | `test_restaurantes.sh` pasa todos los tests |
+| 4 - Entregas | `test_entregas.sh` pasa todos los tests |
+| 5 - Pedidos | `test_pedidos.sh` pasa todos los tests |
+| 6 - Pagos | `test_pagos.sh` pasa todos los tests |
+| 1 - Frontend | La URL del frontend carga en el navegador sin errores |
+
+#### 🏁 Hito 2 — Integración Completa (por equipo)
+
+- [ ] Frontend carga todas las secciones sin errores de CORS
+- [ ] Se puede crear un consumidor desde el frontend
+- [ ] Se puede crear un restaurante y agregar platillos al menú
+- [ ] Se puede crear un pedido (valida consumidor + obtiene precios del menú)
+- [ ] Se puede avanzar el pedido por la máquina de estados hasta ENTREGADO
+- [ ] Se puede procesar el pago del pedido (consulta total del pedido)
+
+---
+
+> **Nota:** La migración de datos es una actividad opcional post-hitos. El objetivo principal
+> del meetup es alcanzar el Hito 2 — un sistema funcional creando datos nuevos desde el frontend.
+> La migración demuestra el proceso de transición entre arquitecturas, pero no es necesaria
+> para que el sistema funcione.
 
 ---
 
@@ -423,10 +500,11 @@ graph LR
    pip3.13 install aws-sam-cli boto3 --user
    ```
 6. Clonar el repositorio en cada EC2.
-7. Copiar el archivo `ftgo.db` del monolito a cada EC2:
+7. Copiar el archivo `ftgo.db` del monolito a cada EC2 (será proporcionado a los alumnos para la actividad opcional de migración):
    ```bash
-   # En la EC2 de cada equipo
-   cp /ruta/al/ftgo-monolito/ftgo.db ~/ftgo-microservicios/ftgo-monolito/ftgo.db
+   # En la EC2 de cada equipo — el instructor deja el archivo listo
+   mkdir -p ~/ftgo-monolito
+   cp /ruta/al/ftgo-monolito/ftgo.db ~/ftgo-monolito/ftgo.db
    ```
 8. Verificar que `sam --version` y `aws sts get-caller-identity` funcionan.
 
@@ -447,16 +525,16 @@ Cada equipo debe tener un canal de comunicación (Slack, WhatsApp, Discord, etc.
 donde las células compartan:
 
 1. **URLs de API Gateway** — Cada célula publica su URL al terminar el despliegue.
-2. **Archivos de mapeo JSON** — Las células 2, 3 y 4 comparten sus archivos de mapeo
-   con la Célula 5, y la Célula 5 comparte el suyo con la Célula 6.
-3. **Estado de avance** — Cada célula reporta cuando termina cada paso.
+2. **Estado de avance** — Cada célula reporta cuando termina cada paso.
+3. *(Opcional)* **Archivos de mapeo JSON** — Si se hace la migración de datos, las células
+   2, 3 y 4 comparten sus archivos de mapeo con la Célula 5, y la Célula 5 comparte
+   el suyo con la Célula 6.
 
 ### Formato sugerido para compartir URLs
 
 ```
 ✅ Célula 2 (Consumidores) lista:
    URL: https://abc123def4.execute-api.us-east-1.amazonaws.com/Prod
-   Mapeo: mapeo_consumidores.json (adjunto)
 ```
 
 ### Tabla de URLs del equipo (para la Célula 1)
@@ -471,10 +549,17 @@ donde las células compartan:
 
 ---
 
-## Script de Migración por Dominio
+## Script de Migración por Dominio (Opcional)
 
-Cada célula usa el script `scripts/migrar_por_dominio.py` para migrar
-SOLO los datos de su dominio desde el monolito (ftgo.db) a DynamoDB.
+> **Esta sección es opcional.** Solo aplica si el equipo decide hacer la migración de datos
+> del monolito como actividad extra después de completar el despliegue principal.
+>
+> **📁 El archivo `ftgo.db` (base de datos SQLite del monolito) será proporcionado por el instructor.**
+> Ya estará disponible en la instancia EC2 de cada equipo en la ruta `~/ftgo-monolito/ftgo.db`.
+> No es necesario desplegar el monolito ni generarlo — solo se usa como fuente de datos para la migración.
+
+Cada célula puede usar el script `scripts/migrar_por_dominio.py` para migrar
+los datos de su dominio desde el monolito (ftgo.db) a DynamoDB.
 
 ### Uso básico
 
@@ -524,6 +609,67 @@ Célula 4 → mapeo_repartidores.json ──────────────
 
 ---
 
+## Pruebas por Microservicio (antes de integrar)
+
+Antes de integrar todo con el frontend, cada célula debe validar que su microservicio
+funciona correctamente usando los scripts de prueba en `scripts/`.
+
+Estos scripts ejecutan un flujo CRUD completo con curl y reportan qué tests pasan o fallan.
+
+### Uso por célula
+
+```bash
+cd ftgo-microservicios/scripts
+chmod +x test_*.sh
+```
+
+| Célula | Script | Comando |
+|--------|--------|---------|
+| 2 - Consumidores | `test_consumidores.sh` | `./test_consumidores.sh https://<URL_CONSUMIDORES>/Prod` |
+| 3 - Restaurantes | `test_restaurantes.sh` | `./test_restaurantes.sh https://<URL_RESTAURANTES>/Prod` |
+| 4 - Entregas | `test_entregas.sh` | `./test_entregas.sh https://<URL_ENTREGAS>/Prod` |
+| 5 - Pedidos | `test_pedidos.sh` | `./test_pedidos.sh <URL_PEDIDOS> <URL_CONS> <URL_REST> <URL_ENTR>` |
+| 6 - Pagos | `test_pagos.sh` | `./test_pagos.sh <URL_PAGOS> <URL_PED> <URL_CONS> <URL_REST>` |
+
+### Ejemplo de salida
+
+```
+═══════════════════════════════════════════════════════════════
+🧪 Pruebas del Microservicio: CONSUMIDORES
+═══════════════════════════════════════════════════════════════
+── Test 1: GET /api/consumidores/ ──
+   ✅ PASS: Listar consumidores (HTTP 200)
+── Test 2: POST /api/consumidores/ ──
+   ✅ PASS: Crear consumidor (HTTP 201)
+   📝 ID creado: a1b2c3d4-e5f6-...
+── Test 3: GET /api/consumidores/{id} ──
+   ✅ PASS: Obtener consumidor por ID (HTTP 200)
+...
+═══════════════════════════════════════════════════════════════
+📊 Resumen: 8 passed, 0 failed (total: 8)
+═══════════════════════════════════════════════════════════════
+🎉 ¡Todos los tests pasaron! El microservicio está listo para integrar.
+```
+
+### ¿Qué valida cada script?
+
+| Script | Validaciones |
+|--------|-------------|
+| `test_consumidores.sh` | CRUD completo + validación de campos + CORS + 404 en eliminado |
+| `test_restaurantes.sh` | CRUD restaurante + CRUD menú (agregar/listar/actualizar/eliminar platillos) |
+| `test_entregas.sh` | CRUD repartidores + cambio de disponibilidad (1→0→1) |
+| `test_pedidos.sh` | Crear pedido + máquina de estados completa + asignar repartidor + transiciones inválidas |
+| `test_pagos.sh` | Procesar pago + verificar monto + idempotencia (no duplicar pagos) + referencia PAY-XXXX |
+
+### Orden recomendado de pruebas
+
+1. **Células 2, 3, 4** ejecutan sus tests inmediatamente después del deploy (son independientes).
+2. **Célula 5** ejecuta su test después de que 2, 3 y 4 confirmen que sus tests pasan.
+3. **Célula 6** ejecuta su test después de que 5 confirme que su test pasa.
+4. **Célula 1** despliega el frontend solo cuando TODAS las células reportan tests exitosos.
+
+---
+
 ## Verificación Final del Sistema
 
 Una vez que la Célula 1 despliega el frontend con todas las URLs configuradas,
@@ -532,28 +678,28 @@ el equipo completo verifica el flujo de negocio:
 ### Test de humo (smoke test)
 
 1. Abrir la URL del frontend en el navegador.
-2. **Consumidores**: verificar que aparece la lista de consumidores migrados.
-3. **Restaurantes**: verificar que aparecen los restaurantes.
-4. **Menú**: seleccionar un restaurante y verificar que aparecen sus platillos.
-5. **Repartidores**: verificar que aparecen los repartidores.
-6. **Pedidos**: verificar que aparecen los pedidos migrados.
-7. **Pagos**: verificar que aparecen los pagos migrados.
+2. **Consumidores**: verificar que la sección carga sin errores (lista vacía o con datos migrados).
+3. **Restaurantes**: verificar que la sección carga sin errores.
+4. **Repartidores**: verificar que la sección carga sin errores.
+5. **Pedidos**: verificar que la sección carga sin errores.
+6. **Pagos**: verificar que la sección carga sin errores.
 
-### Test funcional (crear un pedido nuevo)
+### Test funcional (crear datos nuevos y un pedido completo)
 
-1. Ir a la sección "Pedidos".
-2. Seleccionar un consumidor, un restaurante y platillos del menú.
-3. Crear el pedido → debe aparecer con estado "CREADO".
-4. Cambiar estado a "ACEPTADO" → "PREPARANDO" → "LISTO".
-5. Asignar un repartidor → estado cambia a "EN_CAMINO".
-6. Marcar como "ENTREGADO".
-7. Ir a "Pagos" y procesar el pago del pedido.
-8. Verificar que el pago aparece con referencia "PAY-XXXX".
+1. Ir a "Consumidores" → crear un consumidor nuevo.
+2. Ir a "Restaurantes" → crear un restaurante nuevo → agregar platillos al menú.
+3. Ir a "Repartidores" → crear un repartidor nuevo.
+4. Ir a "Pedidos" → crear un pedido seleccionando el consumidor, restaurante y platillos.
+5. El pedido debe aparecer con estado "CREADO".
+6. Cambiar estado a "ACEPTADO" → "PREPARANDO" → "LISTO".
+7. Asignar el repartidor → cambiar estado a "EN_CAMINO" → "ENTREGADO".
+8. Ir a "Pagos" → procesar el pago del pedido.
+9. Verificar que el pago aparece con referencia "PAY-XXXX".
 
 ### Criterios de éxito
 
 - [ ] Frontend carga sin errores en el navegador
-- [ ] Las 6 secciones muestran datos (migrados o creados)
+- [ ] Se puede crear datos nuevos en cada sección
 - [ ] Se puede crear un pedido nuevo de principio a fin
 - [ ] Se puede procesar un pago
 - [ ] No hay errores de CORS en la consola del navegador
@@ -595,11 +741,11 @@ sam delete --stack-name ftgo-consumidores --no-prompts
 
 ## Resumen de Entregables por Célula
 
-| Célula | Entregable principal | Comparte con |
-|--------|---------------------|--------------|
-| 1 - Frontend | URL del frontend funcionando | Todo el equipo |
-| 2 - Consumidores | URL API + `mapeo_consumidores.json` | Célula 1, 5 |
-| 3 - Restaurantes | URL API + `mapeo_restaurantes.json` + `mapeo_menu.json` | Célula 1, 5 |
-| 4 - Entregas | URL API + `mapeo_repartidores.json` | Célula 1, 5 |
-| 5 - Pedidos | URL API + `mapeo_pedidos.json` | Célula 1, 6 |
-| 6 - Pagos | URL API | Célula 1 |
+| Célula | Entregable principal | Entregable opcional (migración) | Comparte con |
+|--------|---------------------|--------------------------------|--------------|
+| 1 - Frontend | URL del frontend funcionando | — | Todo el equipo |
+| 2 - Consumidores | URL API Gateway | `mapeo_consumidores.json` | Célula 1, 5 |
+| 3 - Restaurantes | URL API Gateway | `mapeo_restaurantes.json` + `mapeo_menu.json` | Célula 1, 5 |
+| 4 - Entregas | URL API Gateway | `mapeo_repartidores.json` | Célula 1, 5 |
+| 5 - Pedidos | URL API Gateway | `mapeo_pedidos.json` | Célula 1, 6 |
+| 6 - Pagos | URL API Gateway | — | Célula 1 |
