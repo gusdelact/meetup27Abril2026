@@ -171,76 +171,87 @@ graph LR
 ```mermaid
 erDiagram
     CONSUMIDORES_TABLE {
-        string id PK "UUID"
+        string id PK "UUID - HASH key"
         string nombre
-        string email "GSI: email-index"
+        string email "GSI email-index"
         string telefono
         string direccion
         string fecha_registro "ISO 8601"
     }
 
     RESTAURANTES_TABLE {
-        string PK PK "REST#id"
-        string SK SK "METADATA | MENU#id"
-        string tipo_entidad "restaurante | elemento_menu"
+        string partition_key PK "REST#uuid - HASH key"
+        string sort_key "METADATA o MENU#uuid - RANGE key"
+        string tipo_entidad "restaurante o elemento_menu"
+        string id "UUID publico del recurso"
+        string restaurante_id "Solo en elementos del menu"
         string nombre
-        string direccion
-        string telefono
-        string tipo_cocina
-        string horario_apertura
-        string horario_cierre
-        string descripcion
-        number precio
-        number disponible
-        string fecha_registro
+        string direccion "Solo en restaurante"
+        string telefono "Solo en restaurante"
+        string tipo_cocina "Solo en restaurante"
+        string horario_apertura "Solo en restaurante"
+        string horario_cierre "Solo en restaurante"
+        string descripcion "Solo en elemento_menu"
+        number precio "Solo en elemento_menu - Decimal"
+        number disponible "Solo en elemento_menu - 1 o 0"
+        string fecha_registro "Solo en restaurante"
     }
 
     PEDIDOS_TABLE {
-        string PK PK "PED#id"
-        string SK SK "METADATA | ELEM#id"
-        string tipo_entidad "pedido | elemento_pedido"
-        string consumidor_id "GSI: consumidor-index"
-        string restaurante_id
-        string repartidor_id
-        string estado
-        number total
-        string direccion_entrega
-        string elemento_menu_id
-        number cantidad
-        number precio_unitario
-        number subtotal
-        string fecha_creacion
-        string fecha_actualizacion
+        string partition_key PK "PED#uuid - HASH key"
+        string sort_key "METADATA o ELEM#uuid - RANGE key"
+        string tipo_entidad "pedido o elemento_pedido"
+        string id "UUID publico del recurso"
+        string pedido_id "Solo en elemento_pedido"
+        string consumidor_id "GSI consumidor-index - solo en pedido"
+        string restaurante_id "Solo en pedido"
+        string repartidor_id "Solo en pedido - nullable"
+        string estado "Solo en pedido"
+        number total "Solo en pedido - Decimal"
+        string direccion_entrega "Solo en pedido"
+        string elemento_menu_id "Solo en elemento_pedido"
+        number cantidad "Solo en elemento_pedido"
+        number precio_unitario "Solo en elemento_pedido - Decimal"
+        number subtotal "Solo en elemento_pedido - Decimal"
+        string fecha_creacion "Solo en pedido"
+        string fecha_actualizacion "Solo en pedido"
     }
 
     REPARTIDORES_TABLE {
-        string id PK "UUID"
+        string id PK "UUID - HASH key"
         string nombre
         string telefono
         string vehiculo
-        number disponible "GSI: disponible-index"
+        number disponible "1 libre - 0 ocupado - sin GSI"
         string fecha_registro "ISO 8601"
     }
 
     PAGOS_TABLE {
-        string id PK "UUID"
-        string pedido_id "GSI: pedido-index"
-        number monto
-        string metodo_pago
-        string estado
-        string referencia
+        string id PK "UUID - HASH key"
+        string pedido_id "GSI pedido-index"
+        number monto "Decimal"
+        string metodo_pago "tarjeta o efectivo"
+        string estado "COMPLETADO"
+        string referencia "PAY-XXXXXXXXXXXX"
         string fecha_pago "ISO 8601"
     }
 
-    CONSUMIDORES_TABLE ||--o{ PEDIDOS_TABLE : "referenciado por consumidor_id"
-    RESTAURANTES_TABLE ||--o{ PEDIDOS_TABLE : "referenciado por restaurante_id"
-    REPARTIDORES_TABLE ||--o{ PEDIDOS_TABLE : "referenciado por repartidor_id"
-    PEDIDOS_TABLE ||--o| PAGOS_TABLE : "referenciado por pedido_id"
+    CONSUMIDORES_TABLE ||--o{ PEDIDOS_TABLE : "consumidor_id - validacion HTTP"
+    RESTAURANTES_TABLE ||--o{ PEDIDOS_TABLE : "restaurante_id - validacion HTTP"
+    REPARTIDORES_TABLE ||--o{ PEDIDOS_TABLE : "repartidor_id - validacion HTTP"
+    PEDIDOS_TABLE ||--o| PAGOS_TABLE : "pedido_id - validacion HTTP"
 ```
 
-> **Nota:** En microservicios con DynamoDB, las relaciones son lógicas (no hay foreign keys).
+> **Nota:** En microservicios con DynamoDB, las relaciones son **lógicas** (no hay foreign keys).
 > Cada tabla es independiente y pertenece a un servicio diferente. La integridad referencial
 > se garantiza a nivel de aplicación (validación HTTP entre servicios).
+>
+> **Correcciones aplicadas vs. versión anterior:**
+> 1. Se agregó el campo `id` (UUID público) en RESTAURANTES_TABLE y PEDIDOS_TABLE
+> 2. Se agregó `restaurante_id` en elementos del menú y `pedido_id` en elementos del pedido
+> 3. Se eliminó el GSI `disponible-index` de REPARTIDORES_TABLE (no existe en el template.yaml)
+> 4. Se clarificó qué campos aplican a cada tipo_entidad en tablas con single-table design
+> 5. Se especificó que las relaciones son por validación HTTP (no FK de base de datos)
 
 ### 4.1 Tabla: ftgo-consumidores
 
